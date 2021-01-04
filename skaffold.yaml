@@ -1,0 +1,11 @@
+### [build]
+apiVersion: skaffold/v1beta12
+kind: Config
+build:
+  artifacts:
+  - image: rode-collector-harbor
+    docker:
+      target: runner
+  local:
+    useBuildkit: true
+### [build]
