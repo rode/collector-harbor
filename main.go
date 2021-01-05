@@ -10,11 +10,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	pb "github.com/liatrio/rode-api/proto/v1alpha1"
+  /* TODO Uncomment once grpc is figured out */
+	//pb "github.com/liatrio/rode-api/proto/v1alpha1"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
+  /* TODO Uncomment once grpc is figured out */
+	//"google.golang.org/grpc"
 
-	"github.com/rode/collector-harbor/listener"
+  /* TODO Uncomment once grpc is figured out */
+	//"github.com/rode/collector-harbor/listener"
 )
 
 var (
@@ -24,7 +27,7 @@ var (
 )
 
 func main() {
-	flag.IntVar(&port, "port", 8081, "the port that the harbor collector should listen on")
+	flag.IntVar(&port, "port", 8080, "the port that the harbor collector should listen on")
 	flag.BoolVar(&debug, "debug", false, "when set, debug mode will be enabled")
 	flag.StringVar(&rodeHost, "rode-host", "localhost:50051", "the host to use to connect to rode")
 
@@ -35,18 +38,20 @@ func main() {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
-	conn, err := grpc.Dial(rodeHost, grpc.WithInsecure(), grpc.WithBlock())
-	defer conn.Close()
-	if err != nil {
-		logger.Fatal("failed to establish grpc connection to Rode API", zap.NamedError("error", err))
-	}
+  /* TODO Uncomment once grpc is figured out */
+	//conn, err := grpc.Dial(rodeHost, grpc.WithInsecure(), grpc.WithBlock())
+	//defer conn.Close()
+	//if err != nil {
+	//	logger.Fatal("failed to establish grpc connection to Rode API", zap.NamedError("error", err))
+	//}
 
-	rodeClient := pb.NewRodeClient(conn)
+	//rodeClient := pb.NewRodeClient(conn)
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient)
+	//l := listener.NewListener(logger.Named("listener"), rodeClient)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/webhook/event", l.ProcessEvent)
+  /* TODO Uncomment once grpc is figured out */
+	//mux.HandleFunc("/webhook/event", l.ProcessEvent)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "I'm healthy") })
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
