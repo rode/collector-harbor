@@ -46,18 +46,19 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		log.Error("error reading webhook event", zap.NamedError("error", err))
 		return
 	}
+  log.Info("body is here", zap.Any("body", request.Body))
   log.Info("harbor event is here", zap.Any("event", event))
 
 	//log.Debug("received harbor event", zap.Any("event", event), zap.Any("project", event.ID), zap.Any("ID", event.ID))
 
-	repo := "spring-petclinic"
+	//repo := "spring-petclinic"
 	var occurrences []*grafeas_go_proto.Occurrence
 
-	for _, condition := range event.Vulnerability.Conditions {
-		log.Debug("harbor event image vulnerability condition", zap.Any("condition", condition))
-		occurrence := createVulnerabilityOccurrence(condition, repo)
-		occurrences = append(occurrences, occurrence)
-	}
+	//for _, condition := range event.Vulnerability.Conditions {
+	//	log.Debug("harbor event image vulnerability condition", zap.Any("condition", condition))
+	//	occurrence := createVulnerabilityOccurrence(condition, repo)
+	//	occurrences = append(occurrences, occurrence)
+	//}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -74,9 +75,9 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	w.WriteHeader(200)
 }
 
-func createVulnerabilityOccurrence(condition *harbor.Condition, repo string) *grafeas_go_proto.Occurrence {
+func createScanOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
 	occurrence := &grafeas_go_proto.Occurrence{
-		Name: condition.Metric,
+		Name: eventData.Repository.Name,
 		Resource: &grafeas_go_proto.Resource{
 			Name: repo,
 			Uri:  repo,

@@ -2,29 +2,30 @@ package harbor
 
 // Event received
 type Event struct {
-  EventType    string   `json:"event_type"`
-  Project      string   `json:"project"`
-  RepoName     string   `json:"repo_name"`
-  Tag          string   `json:"tag"`
-  FullName     string   `json:"full_name"`
-  TriggerTime  string   `json:"trigger_time"`
-  ImageId      string   `json:"image_id"`
-  ProjectType  string   `json:"project_type"`
-	Vulnerability *Vulnerability `json:"vulnerability"`
+  Type         string   `json:"type"`
+  OccurAt      int      `json:"occur_at"`
+  Operator     string   `json:"operator"`
+  EventData *EventData  `json:"event_data"`
 }
 
 // Vulnerability is...
-type Vulnerability struct {
-	Conditions []*Condition `json:"conditions"`
-	Name       string       `json:"name"`
-	Status     string       `json:"status"`
+type EventData struct {
+	Resources []*Resource  `json:"resources"`
+  Repository *Repository `json:"repository"`
 }
 
-// Condition is...
-type Condition struct {
-	ErrorThreshold  string `json:"errorThreshold"`
-	Metric          string `json:"metric"`
-	OnLeakPeriod    bool   `json:"onLeakPeriod"`
-	Operator        string `json:"operator"`
-	Status          string `json:"status"`
+// Resource is...
+type Resource struct {
+  Digest        string `json:"digest"`
+  Tag           string `json:"tag"`
+  ResourceUrl   string `json:"resource_url"`
+}
+
+// Repository is...
+type Repository struct {
+  DateCreated   int    `json:"date_created"`
+  Name          string `json:"name"`
+  Namespace     string `json:"namespace"`
+  RepoFullName  string `json:"repo_full_name"`
+  RepoType      string `json:"repo_type"`
 }
