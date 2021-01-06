@@ -46,22 +46,27 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		log.Error("error reading webhook event", zap.NamedError("error", err))
 		return
 	}
-  log.Info("body is here", zap.Any("body", request.Body))
   log.Info("harbor event is here", zap.Any("event", event))
 
-	//log.Debug("received harbor event", zap.Any("event", event), zap.Any("project", event.ID), zap.Any("ID", event.ID))
 
-	//repo := "spring-petclinic"
+	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
+  var occurrence *grafeas_go_proto.Occurrence
 
-	//for _, condition := range event.Vulnerability.Conditions {
-	//	log.Debug("harbor event image vulnerability condition", zap.Any("condition", condition))
-	//	occurrence := createVulnerabilityOccurrence(condition, repo)
-	//	occurrences = append(occurrences, occurrence)
-	//}
+  switch event.Type {
+    case "PUSH_ARTIFACT":
+      occurrence = createImagePushOccurrence(event.EventData, repo)
+    case "SCANNING_COMPLETED":
+      occurrence = createImageScanOccurrence(event.EventData, repo)
+  }
+  occurrences = append(occurrences, occurrence)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
+  if len(occurrences) == 0 {
+    return
+  }
 	response, err := l.rodeClient.BatchCreateOccurrences(ctx, &pb.BatchCreateOccurrencesRequest{
 		Occurrences: occurrences,
 	})
@@ -75,9 +80,59 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	w.WriteHeader(200)
 }
 
-func createScanOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
+func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
 	occurrence := &grafeas_go_proto.Occurrence{
-		Name: eventData.Repository.Name,
+		Name: fmt.Sprintf("image-push-%s", repo),
+		Resource: &grafeas_go_proto.Resource{
+			Name: repo,
+			Uri:  repo,
+		},
+		NoteName:    "projects/notes_project/notes/harbor",
+		Kind:        common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED,
+		Remediation: "test",
+		CreateTime:  timestamppb.Now(),
+		// To be changed when a proper occurrence type is determined
+		Details: &grafeas_go_proto.Occurrence_Vulnerability{
+			Vulnerability: &vulnerability_go_proto.Details{
+				Type:             "test",
+				Severity:         vulnerability_go_proto.Severity_CRITICAL,
+				ShortDescription: "abc",
+				LongDescription:  "abc123",
+				RelatedUrls: []*common_go_proto.RelatedUrl{
+					{
+						Url:   "test",
+						Label: "test",
+					},
+					{
+						Url:   "test",
+						Label: "test",
+					},
+				},
+				EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
+				PackageIssue: []*vulnerability_go_proto.PackageIssue{
+					{
+						SeverityName: "test",
+						AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
+							CpeUri:  "test",
+							Package: "test",
+							Version: &package_go_proto.Version{
+								Name:     "test",
+								Revision: "test",
+								Epoch:    35,
+								Kind:     package_go_proto.Version_MINIMUM,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	return occurrence
+}
+
+func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
+	occurrence := &grafeas_go_proto.Occurrence{
+		Name: fmt.Sprintf("image-scan-%s", repo),
 		Resource: &grafeas_go_proto.Resource{
 			Name: repo,
 			Uri:  repo,
