@@ -24,9 +24,9 @@ var (
 )
 
 func main() {
-	flag.IntVar(&port, "port", 8081, "the port that the harbor collector should listen on")
+	flag.IntVar(&port, "port", 8080, "the port that the harbor collector should listen on")
 	flag.BoolVar(&debug, "debug", false, "when set, debug mode will be enabled")
-	flag.StringVar(&rodeHost, "rode-host", "localhost:50051", "the host to use to connect to rode")
+	flag.StringVar(&rodeHost, "rode-host", "rode:50051", "the host to use to connect to rode")
 
 	flag.Parse()
 
@@ -47,6 +47,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
+	//mux.HandleFunc("/webhook/event", func(w http.ResponseWriter, r *http.Request) { logger.Info("I got an event") })
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "I'm healthy") })
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
