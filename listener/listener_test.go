@@ -17,7 +17,8 @@ var _ = Describe("listener", func() {
 	var (
 		listener        Listener
 		rodeClient      *mockRodeClient
-		generalEvent    *harbor.Event
+		imagePushEvent  *harbor.Event
+		imageScanEvent  *harbor.Event
 		basicResource   *harbor.Resource
 		basicRepository *harbor.Repository
 		basicResources  []*harbor.Resource
@@ -41,8 +42,17 @@ var _ = Describe("listener", func() {
 
 		basicResources = append(basicResources, basicResource)
 
-		generalEvent = &harbor.Event{
+		imagePushEvent = &harbor.Event{
 			Type:     "PUSH_ARTIFACT",
+			OccurAt:  1610046898,
+			Operator: "admin",
+			EventData: &harbor.EventData{
+				Resources:  basicResources,
+				Repository: basicRepository,
+			}}
+
+		imageScanEvent = &harbor.Event{
+			Type:     "SCANNING_COMPLETED",
 			OccurAt:  1610046898,
 			Operator: "admin",
 			EventData: &harbor.EventData{
@@ -58,7 +68,7 @@ var _ = Describe("listener", func() {
 	Context("determining Resource URI", func() {
 		When("using Sonarqube Community Edition", func() {
 			It("should be based on a passed in resource uri prefix", func() {
-				Expect(generalEvent.EventData.Repository.Name).To(Equal("traefik"))
+				Expect(imagePushEvent.EventData.Repository.Name).To(Equal("traefik"))
 			})
 		})
 
@@ -76,9 +86,19 @@ var _ = Describe("listener", func() {
 			handler.ServeHTTP(rr, req)
 		})
 
-		When("using a valid event", func() {
+		When("using a valid image push event", func() {
 			BeforeEach(func() {
-				body, _ = json.Marshal(generalEvent)
+				body, _ = json.Marshal(imagePushEvent)
+			})
+
+			It("should not error out", func() {
+				Expect(rr.Result().StatusCode).To(Equal(200))
+			})
+		})
+
+		When("using a valid image scan event", func() {
+			BeforeEach(func() {
+				body, _ = json.Marshal(imageScanEvent)
 			})
 
 			It("should not error out", func() {
@@ -100,7 +120,7 @@ var _ = Describe("listener", func() {
 		When("failing to create occurrences", func() {
 			BeforeEach(func() {
 				rodeClient.expectedError = errors.New("FAILED")
-				body, _ = json.Marshal(generalEvent)
+				body, _ = json.Marshal(imagePushEvent)
 			})
 
 			It("should return a bad response", func() {
