@@ -13,8 +13,8 @@ import (
 	pb "github.com/liatrio/rode-api/proto/v1alpha1"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/common_go_proto"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/grafeas_go_proto"
-	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/vulnerability_go_proto"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/package_go_proto"
+	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/vulnerability_go_proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -47,20 +47,19 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-
 	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
-  var occurrence *grafeas_go_proto.Occurrence
+	var occurrence *grafeas_go_proto.Occurrence
 
-  switch event.Type {
-    case "PUSH_ARTIFACT":
-      occurrence = createImagePushOccurrence(event.EventData, repo)
-    case "SCANNING_COMPLETED":
-      occurrence = createImageScanOccurrence(event.EventData, repo)
-    default:
-      return
-  }
-  occurrences = append(occurrences, occurrence)
+	switch event.Type {
+	case "PUSH_ARTIFACT":
+		occurrence = createImagePushOccurrence(event.EventData, repo)
+	case "SCANNING_COMPLETED":
+		occurrence = createImageScanOccurrence(event.EventData, repo)
+	default:
+		return
+	}
+	occurrences = append(occurrences, occurrence)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
