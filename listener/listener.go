@@ -46,7 +46,6 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		log.Error("error reading webhook event", zap.NamedError("error", err))
 		return
 	}
-  log.Info("harbor event is here", zap.Any("event", event))
 
 
 	repo := event.EventData.Repository.Name
@@ -58,15 +57,14 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
       occurrence = createImagePushOccurrence(event.EventData, repo)
     case "SCANNING_COMPLETED":
       occurrence = createImageScanOccurrence(event.EventData, repo)
+    default:
+      return
   }
   occurrences = append(occurrences, occurrence)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-  if len(occurrences) == 0 {
-    return
-  }
 	response, err := l.rodeClient.BatchCreateOccurrences(ctx, &pb.BatchCreateOccurrencesRequest{
 		Occurrences: occurrences,
 	})
@@ -80,6 +78,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	w.WriteHeader(200)
 }
 
+/* TODO need to update this method to use real data */
 func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
 	occurrence := &grafeas_go_proto.Occurrence{
 		Name: fmt.Sprintf("image-push-%s", repo),
@@ -130,6 +129,7 @@ func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafea
 	return occurrence
 }
 
+/* TODO need to update this method to use real data */
 func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
 	occurrence := &grafeas_go_proto.Occurrence{
 		Name: fmt.Sprintf("image-scan-%s", repo),
