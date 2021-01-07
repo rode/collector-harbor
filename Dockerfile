@@ -31,12 +31,3 @@ COPY --from=builder /workspace/rode-collector-harbor .
 USER nonroot:nonroot
 
 ENTRYPOINT ["./rode-collector-harbor"]
-EXPOSE 8080
-
-
-# - docker build -t rode-collector-harbor:buildID --target=builder
-# - copy coverage out
-#   - docker run rode-collector-harbor:buildID
-#   - docker cp rode-collector-harbor:buildID coverage.txt .
-#   - docker rm rode-collector-harbor
-# - docker build -t rode-collector-harbor --target=artifact

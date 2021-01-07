@@ -47,7 +47,6 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
-	//mux.HandleFunc("/webhook/event", func(w http.ResponseWriter, r *http.Request) { logger.Info("I got an event") })
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "I'm healthy") })
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
