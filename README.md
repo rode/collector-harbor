@@ -23,6 +23,18 @@ docker push core.harbor.domain/library/nginx:stable-alpine
 
 Read more about how to setup Webhooks for projects [here](https://goharbor.io/docs/2.1.0/working-with-projects/project-configuration/configure-webhooks/).
 
+## Running Rode locally
+
+Build the Rode image:
+```
+docker build -t rode .
+```
+
+Deploy rode locally using Helm:
+```
+helm install rode helm/rode/. --set=image.repository=rode --set=image.tag=latest
+```
+
 ## Running Harbor Collector locally
 
 Build and deploy the Harbor Collector:
