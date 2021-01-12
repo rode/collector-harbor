@@ -27,6 +27,7 @@ Read more about how to setup Webhooks for projects [here](https://goharbor.io/do
 
 Build the Rode image:
 ```
+git clone https://github.com/rode/rode.git && cd rode
 docker build -t rode .
 ```
 
@@ -37,9 +38,15 @@ helm install rode helm/rode/. --set=image.repository=rode --set=image.tag=latest
 
 ## Running Harbor Collector locally
 
-Build and deploy the Harbor Collector:
+Build the Harbor Collector:
 ```
 docker build -t rode-collector-harbor .
+helm install rode-collector-harbor charts/rode-collector-harbor --set=image.repository=rode-collector-harbor --set=image.tag=latest
+```
+
+Deploy the Harbor Collector:
+```
+git clone https://github.com/rode/charts.git && cd charts
 helm install rode-collector-harbor charts/rode-collector-harbor --set=image.repository=rode-collector-harbor --set=image.tag=latest
 ```
 
