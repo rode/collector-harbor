@@ -15,6 +15,7 @@ import (
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/grafeas_go_proto"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/package_go_proto"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/vulnerability_go_proto"
+	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/discovery_go_proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -46,6 +47,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		log.Error("error reading webhook event", zap.NamedError("error", err))
 		return
 	}
+	log.Info("Harbor event is here", zap.Any("event", event))
 
 	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
@@ -55,11 +57,13 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	case "PUSH_ARTIFACT":
 		occurrence = createImagePushOccurrence(event.EventData, repo)
 	case "SCANNING_COMPLETED":
-		occurrence = createImageScanOccurrence(event.EventData, repo)
+		occurrence = createImageScanVulnerabilityOccurrence(event.EventData, repo)
 	default:
 		return
 	}
 	occurrences = append(occurrences, occurrence)
+
+	log.Info("Occurrence is here", zap.Any("occurrence", occurrence))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -73,54 +77,22 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	log.Debug("response payload", zap.Any("response", response.GetOccurrences()))
+	//log.Info("response payload", zap.Any("response", response.GetOccurrences()))
 	w.WriteHeader(200)
 }
 
-/* TODO need to update this method to use real data */
 func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
 	occurrence := &grafeas_go_proto.Occurrence{
-		Name: fmt.Sprintf("image-push-%s", repo),
 		Resource: &grafeas_go_proto.Resource{
-			Name: repo,
 			Uri:  repo,
 		},
 		NoteName:    "projects/notes_project/notes/harbor",
-		Kind:        common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED,
-		Remediation: "test",
+		Kind:        common_go_proto.NoteKind_DISCOVERY,
 		CreateTime:  timestamppb.Now(),
-		// To be changed when a proper occurrence type is determined
-		Details: &grafeas_go_proto.Occurrence_Vulnerability{
-			Vulnerability: &vulnerability_go_proto.Details{
-				Type:             "test",
-				Severity:         vulnerability_go_proto.Severity_CRITICAL,
-				ShortDescription: "abc",
-				LongDescription:  "abc123",
-				RelatedUrls: []*common_go_proto.RelatedUrl{
-					{
-						Url:   "test",
-						Label: "test",
-					},
-					{
-						Url:   "test",
-						Label: "test",
-					},
-				},
-				EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
-				PackageIssue: []*vulnerability_go_proto.PackageIssue{
-					{
-						SeverityName: "test",
-						AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
-							CpeUri:  "test",
-							Package: "test",
-							Version: &package_go_proto.Version{
-								Name:     "test",
-								Revision: "test",
-								Epoch:    35,
-								Kind:     package_go_proto.Version_MINIMUM,
-							},
-						},
-					},
+		Details: &grafeas_go_proto.Occurrence_Discovered{
+			Discovered: &discovery_go_proto.Details{
+				Discovered : &discovery_go_proto.Discovered {
+          ContinuousAnalysis:    0,
 				},
 			},
 		},
@@ -128,33 +100,22 @@ func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafea
 	return occurrence
 }
 
-/* TODO need to update this method to use real data */
-func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
+func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
 	occurrence := &grafeas_go_proto.Occurrence{
-		Name: fmt.Sprintf("image-scan-%s", repo),
 		Resource: &grafeas_go_proto.Resource{
-			Name: repo,
 			Uri:  repo,
 		},
 		NoteName:    "projects/notes_project/notes/harbor",
-		Kind:        common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED,
-		Remediation: "test",
+		Kind:        common_go_proto.NoteKind_VULNERABILITY,
 		CreateTime:  timestamppb.Now(),
-		// To be changed when a proper occurrence type is determined
 		Details: &grafeas_go_proto.Occurrence_Vulnerability{
 			Vulnerability: &vulnerability_go_proto.Details{
-				Type:             "test",
+				Type:             "docker",
 				Severity:         vulnerability_go_proto.Severity_CRITICAL,
-				ShortDescription: "abc",
-				LongDescription:  "abc123",
+				ShortDescription: fmt.Sprintf("Image %s scanned", repo),
 				RelatedUrls: []*common_go_proto.RelatedUrl{
 					{
-						Url:   "test",
-						Label: "test",
-					},
-					{
-						Url:   "test",
-						Label: "test",
+						Url: eventData.Resources[0].ResourceUrl,
 					},
 				},
 				EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
@@ -162,7 +123,7 @@ func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafea
 					{
 						SeverityName: "test",
 						AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
-							CpeUri:  "test",
+							CpeUri:  eventData.Resources[0].ResourceUrl,
 							Package: "test",
 							Version: &package_go_proto.Version{
 								Name:     "test",
