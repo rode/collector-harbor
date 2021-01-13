@@ -17,7 +17,9 @@ import (
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/package_go_proto"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/vulnerability_go_proto"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/discovery_go_proto"
+  "github.com/go-resty/resty/v2"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
 )
 
 type listener struct {
@@ -52,22 +54,23 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 
 	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
-	//var scanOccurrences []*grafeas_go_proto.Occurrence
+	var scanOccurrences []*grafeas_go_proto.Occurrence
 	var occurrence *grafeas_go_proto.Occurrence
 
 	switch event.Type {
 	case "PUSH_ARTIFACT":
 		occurrence = createImagePushOccurrence(event.EventData, repo)
 	case "SCANNING_COMPLETED":
-		occurrence = createImageScanVulnerabilityOccurrence(event.EventData, repo)
-    //if (event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0) {
-    //  scanOccurrences = getImageVulnerabilities(event.EventData)
-    //}
+		occurrence = createImageScanOccurrence(event.EventData, repo)
+	  log.Info("Scan overview is here", zap.Any("overview", event.EventData.Resources[0].ScanOverview))
+    if (event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0) {
+      scanOccurrences = getImageVulnerabilities(l, event.EventData)
+    }
 	default:
 		return
 	}
 	occurrences = append(occurrences, occurrence)
-	//occurrences = append(occurrences, scanOccurrences)
+	occurrences = append(occurrences, scanOccurrences...)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -96,19 +99,62 @@ func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafea
 		Details: &grafeas_go_proto.Occurrence_Discovered{
 			Discovered: &discovery_go_proto.Details{
 				Discovered : &discovery_go_proto.Discovered {
-          ContinuousAnalysis:    0,
-				},
-			},
+          ContinuousAnalysis: 0,
+				}, },
 		},
 	}
 	return occurrence
 }
 
-func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
+func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
 
 	occurrence := &grafeas_go_proto.Occurrence{
 		Resource: &grafeas_go_proto.Resource{
 			Uri:  repo,
+		},
+		NoteName:    "projects/notes_project/notes/harbor",
+		Kind:        common_go_proto.NoteKind_DISCOVERY,
+		CreateTime:  timestamppb.Now(),
+		Details: &grafeas_go_proto.Occurrence_Discovered{
+			Discovered: &discovery_go_proto.Details{
+				Discovered : &discovery_go_proto.Discovered {
+          ContinuousAnalysis: 0,
+				}, },
+		},
+	}
+	return occurrence
+
+}
+
+func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafeas_go_proto.Occurrence {
+	log := l.logger.Named("ProcessEvent")
+
+	var scanOccurrences []*grafeas_go_proto.Occurrence
+
+  client := resty.New()
+
+  //uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, eventData.Resources[0].Tag)
+  uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, "4.6.0")
+
+  resp, err := client.R().
+      EnableTrace().
+      Get(uri)
+	if err != nil {
+		log.Error("error reading Vulnerabilities report from Harbor", zap.NamedError("error", err))
+		return scanOccurrences
+	}
+
+	log.Info("Resp is here %s", zap.Any("resp", resp.String()))
+	//report := &harbor.Report{}
+	//if err := json.NewDecoder(resp.RawRequest.GetBody()).Decode(report); err != nil {
+	//	log.Error("error reading Vulnerabilities report from Harbor", zap.NamedError("error", err))
+	//	return scanOccurrences
+	//}
+	//log.Info("Report is here", zap.Any("report", report))
+
+	occurrence := &grafeas_go_proto.Occurrence{
+		Resource: &grafeas_go_proto.Resource{
+			Uri:  eventData.Repository.Name,
 		},
 		NoteName:    "projects/notes_project/notes/harbor",
 		Kind:        common_go_proto.NoteKind_VULNERABILITY,
@@ -117,7 +163,7 @@ func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo st
 			Vulnerability: &vulnerability_go_proto.Details{
 				Type:             "docker",
 				Severity:         vulnerability_go_proto.Severity(vulnerability_go_proto.Severity_value[strings.ToUpper(eventData.Resources[0].ScanOverview.Report.Severity)]),
-				ShortDescription: fmt.Sprintf("Image %s scanned", repo),
+				ShortDescription: "Needs to be updated",
 				RelatedUrls: []*common_go_proto.RelatedUrl{
 					{
 						Url: eventData.Resources[0].ResourceUrl,
@@ -142,50 +188,7 @@ func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo st
 			},
 		},
 	}
-	return occurrence
-}
 
-//func getImageVulnerabilities(eventData *harbor.EventData) []*grafeas_go_proto.Occurrence {
-//
-//	var scanOccurrences []*grafeas_go_proto.Occurrence
-//
-//	occurrence := &grafeas_go_proto.Occurrence{
-//		Resource: &grafeas_go_proto.Resource{
-//			Uri:  eventData.Repository.Name,
-//		},
-//		NoteName:    "projects/notes_project/notes/harbor",
-//		Kind:        common_go_proto.NoteKind_VULNERABILITY,
-//		CreateTime:  timestamppb.Now(),
-//		Details: &grafeas_go_proto.Occurrence_Vulnerability{
-//			Vulnerability: &vulnerability_go_proto.Details{
-//				Type:             "docker",
-//				Severity:         eventData.Resources[0].ScanOverview.Report.Severity,
-//				ShortDescription: fmt.Sprintf("Image %s scanned", eventData.Repository.Name),
-//				RelatedUrls: []*common_go_proto.RelatedUrl{
-//					{
-//						Url: eventData.Resources[0].ResourceUrl,
-//					},
-//				},
-//				EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
-//				PackageIssue: []*vulnerability_go_proto.PackageIssue{
-//					{
-//						SeverityName: "test", //Needs to be updated
-//						AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
-//							CpeUri:  eventData.Resources[0].ResourceUrl,
-//							Package: "test",//Needs to be updated
-//							Version: &package_go_proto.Version{
-//								Name:     eventData.Repository.Name,
-//								Revision: eventData.Resources[0].Digest,
-//								Epoch:    35,
-//								Kind:     package_go_proto.Version_MINIMUM,
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//  scanOccurrences = append(scanOccurrences, occurrence)
-//	return scanOccurrences
-//}
+  scanOccurrences = append(scanOccurrences, occurrence)
+	return scanOccurrences
+}

@@ -33,7 +33,7 @@ type Resource struct {
 
 // ScanOverview is...
 type ScanOverview struct {
-  Report *Report `json:"application/vnd.scanner.adapter.vuln.report.harbor+json; version=1.0"`
+  Report *Report `json:"application/vnd.scanner.adapter.vuln.report.harbor+json\; version=1.0"`
 }
 
 // is...
@@ -47,7 +47,20 @@ type Report struct {
   EndTime             string `json:"end_time"`
   Scanner           *Scanner `json:"scanner"`
   CompletePercentage  int    `json:"complete_percent"`
+  Vulnerabilities   *[]Vulnerability `json:"vulnerabilities"`
 }
+// Summary is...
+type Vulnerability  struct {
+  ArtifactDigest  string `json:"artifact_digest"`
+  Description     string `json:"description"`
+  FixVersion      string `json:"fix_version"`
+  ID              string `json:"id"`
+  Links         []string `json:"links"`
+  Package         string `json:"package"`
+  Severity        string `json:"severity"`
+  Version         string `json:"version"`
+}
+
 // Summary is...
 type Summary struct {
   Total      int `json:"total"`
