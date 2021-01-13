@@ -63,8 +63,6 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	}
 	occurrences = append(occurrences, occurrence)
 
-	log.Info("Occurrence is here", zap.Any("occurrence", occurrence))
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -77,7 +75,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	//log.Info("response payload", zap.Any("response", response.GetOccurrences()))
+	log.Debug("response payload", zap.Any("response", response))
 	w.WriteHeader(200)
 }
 
@@ -111,7 +109,7 @@ func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo st
 		Details: &grafeas_go_proto.Occurrence_Vulnerability{
 			Vulnerability: &vulnerability_go_proto.Details{
 				Type:             "docker",
-				Severity:         vulnerability_go_proto.Severity_CRITICAL,
+				Severity:         eventData.Resources[0].ScanOverview.Report.Severity,
 				ShortDescription: fmt.Sprintf("Image %s scanned", repo),
 				RelatedUrls: []*common_go_proto.RelatedUrl{
 					{
@@ -121,13 +119,13 @@ func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo st
 				EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
 				PackageIssue: []*vulnerability_go_proto.PackageIssue{
 					{
-						SeverityName: "test",
+						SeverityName: "test", //Needs to be updated
 						AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
 							CpeUri:  eventData.Resources[0].ResourceUrl,
-							Package: "test",
+							Package: "test",//Needs to be updated
 							Version: &package_go_proto.Version{
-								Name:     "test",
-								Revision: "test",
+								Name:     eventData.Repository.Name,
+								Revision: eventData.Resources[0].Digest,
 								Epoch:    35,
 								Kind:     package_go_proto.Version_MINIMUM,
 							},
