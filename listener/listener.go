@@ -51,6 +51,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 
 	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
+	var scanOccurrences []*grafeas_go_proto.Occurrence
 	var occurrence *grafeas_go_proto.Occurrence
 
 	switch event.Type {
@@ -58,10 +59,14 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		occurrence = createImagePushOccurrence(event.EventData, repo)
 	case "SCANNING_COMPLETED":
 		occurrence = createImageScanVulnerabilityOccurrence(event.EventData, repo)
+    if (event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0) {
+      scanOccurrences = getImageVulnerabilities(event.EventData)
+    }
 	default:
 		return
 	}
 	occurrences = append(occurrences, occurrence)
+	//occurrences = append(occurrences, scanOccurrences)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -99,6 +104,7 @@ func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafea
 }
 
 func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
+
 	occurrence := &grafeas_go_proto.Occurrence{
 		Resource: &grafeas_go_proto.Resource{
 			Uri:  repo,
@@ -136,4 +142,49 @@ func createImageScanVulnerabilityOccurrence(eventData *harbor.EventData, repo st
 		},
 	}
 	return occurrence
+}
+
+func getImageVulnerabilities(eventData *harbor.EventData) []*grafeas_go_proto.Occurrence {
+
+	var scanOccurrences []*grafeas_go_proto.Occurrence
+
+	occurrence := &grafeas_go_proto.Occurrence{
+		Resource: &grafeas_go_proto.Resource{
+			Uri:  eventData.Repository.Name,
+		},
+		NoteName:    "projects/notes_project/notes/harbor",
+		Kind:        common_go_proto.NoteKind_VULNERABILITY,
+		CreateTime:  timestamppb.Now(),
+		Details: &grafeas_go_proto.Occurrence_Vulnerability{
+			Vulnerability: &vulnerability_go_proto.Details{
+				Type:             "docker",
+				Severity:         eventData.Resources[0].ScanOverview.Report.Severity,
+				ShortDescription: fmt.Sprintf("Image %s scanned", eventData.Repository.Name),
+				RelatedUrls: []*common_go_proto.RelatedUrl{
+					{
+						Url: eventData.Resources[0].ResourceUrl,
+					},
+				},
+				EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
+				PackageIssue: []*vulnerability_go_proto.PackageIssue{
+					{
+						SeverityName: "test", //Needs to be updated
+						AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
+							CpeUri:  eventData.Resources[0].ResourceUrl,
+							Package: "test",//Needs to be updated
+							Version: &package_go_proto.Version{
+								Name:     eventData.Repository.Name,
+								Revision: eventData.Resources[0].Digest,
+								Epoch:    35,
+								Kind:     package_go_proto.Version_MINIMUM,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+  scanOccurrences = append(scanOccurrences, occurrence)
+	return scanOccurrences
 }
