@@ -47,7 +47,7 @@ type Report struct {
   EndTime             string `json:"end_time"`
   Scanner           *Scanner `json:"scanner"`
   CompletePercentage  int    `json:"complete_percent"`
-  Vulnerabilities   *[]Vulnerability `json:"vulnerabilities"`
+  Vulnerabilities   []*Vulnerability `json:"vulnerabilities"`
 }
 // Summary is...
 type Vulnerability  struct {
@@ -81,4 +81,12 @@ type Scanner struct {
   Name    string `json:"name"`
   Vendor  string `json:"vendor"`
   Version string `json:"version"`
+}
+
+type Artifact struct {
+  Tags []*Tag `json:"tags"`
+}
+
+type Tag struct {
+  Name  string  `json:"name"`
 }

@@ -83,7 +83,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	log.Debug("response payload", zap.Any("response", response))
+	log.Info("response payload", zap.Any("response", response))
 	w.WriteHeader(200)
 }
 
@@ -132,13 +132,16 @@ func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafea
 
   client := resty.New()
 
-	log.Info("Project is here %s", zap.Any("resp", eventData.Repository.Namespace))
-	log.Info("Repository is here %s", zap.Any("resp", eventData.Repository.Name))
-	log.Info("Tag is here %s", zap.Any("resp", eventData.Resources[0].Tag))
-  //uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, eventData.Resources[0].Tag)
-  uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, "4.6.0")
-
+  uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts", eventData.Repository.Namespace, eventData.Repository.Name)
   resp, err := client.R().
+      EnableTrace().
+      Get(uri)
+
+	artifacts := []*harbor.Artifact{}
+  json.Unmarshal(resp.Body(), &artifacts)
+
+  uri = fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
+  resp, err = client.R().
       EnableTrace().
       Get(uri)
 	if err != nil {
@@ -146,52 +149,48 @@ func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafea
 		return scanOccurrences
 	}
 
-	log.Info("Resp is here %s", zap.Any("resp", resp.String()))
 	scanOverview := &harbor.ScanOverview{}
   json.Unmarshal(resp.Body(), &scanOverview)
-	//if err := json.NewDecoder(resp.RawResponse.Body).Decode(scanOverview); err != nil {
-	//	log.Error("error reading Vulnerabilities report from Harbor", zap.NamedError("error", err))
-	//	return scanOccurrences
-	//}
-	//log.Info("Scan overview is here", zap.Any("scanOverview", scanOverview))
 
-	occurrence := &grafeas_go_proto.Occurrence{
-		Resource: &grafeas_go_proto.Resource{
-			Uri:  eventData.Repository.Name,
-		},
-		NoteName:    "projects/notes_project/notes/harbor",
-		Kind:        common_go_proto.NoteKind_VULNERABILITY,
-		CreateTime:  timestamppb.Now(),
-		Details: &grafeas_go_proto.Occurrence_Vulnerability{
-			Vulnerability: &vulnerability_go_proto.Details{
-				Type:             "docker",
-				Severity:         vulnerability_go_proto.Severity(vulnerability_go_proto.Severity_value[strings.ToUpper(eventData.Resources[0].ScanOverview.Report.Severity)]),
-				ShortDescription: "Needs to be updated",
-				RelatedUrls: []*common_go_proto.RelatedUrl{
-					{
-						Url: eventData.Resources[0].ResourceUrl,
-					},
-				},
-				EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
-				PackageIssue: []*vulnerability_go_proto.PackageIssue{
-					{
-						SeverityName: "test", //Needs to be updated
-						AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
-							CpeUri:  eventData.Resources[0].ResourceUrl,
-							Package: "test",//Needs to be updated
-							Version: &package_go_proto.Version{
-								Name:     eventData.Repository.Name,
-								Revision: eventData.Resources[0].Digest,
-								Epoch:    35,
-								Kind:     package_go_proto.Version_MINIMUM,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+  for _, vulnerability := range scanOverview.Report.Vulnerabilities {
+    occurrence := &grafeas_go_proto.Occurrence{
+      Resource: &grafeas_go_proto.Resource{
+        Uri:  eventData.Repository.RepoFullName,
+      },
+      NoteName:    "projects/notes_project/notes/harbor",
+      Kind:        common_go_proto.NoteKind_VULNERABILITY,
+      CreateTime:  timestamppb.Now(),
+      Details: &grafeas_go_proto.Occurrence_Vulnerability{
+        Vulnerability: &vulnerability_go_proto.Details{
+          Type:             "docker",
+          Severity:         vulnerability_go_proto.Severity(vulnerability_go_proto.Severity_value[strings.ToUpper(vulnerability.Severity)]),
+          ShortDescription: vulnerability.Description,
+          RelatedUrls: []*common_go_proto.RelatedUrl{
+            {
+              Url: eventData.Resources[0].ResourceUrl,
+            },
+          },
+          EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
+          PackageIssue: []*vulnerability_go_proto.PackageIssue{
+            {
+              SeverityName: vulnerability.Severity,
+              AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
+                CpeUri:  eventData.Resources[0].ResourceUrl,
+                Package: vulnerability.Package,
+                Version: &package_go_proto.Version{
+                  Name:     vulnerability.Package,
+                  Revision: vulnerability.Version,
+                  Epoch:    35,
+                  Kind:     package_go_proto.Version_MINIMUM,
+                },
+              },
+            },
+          },
+        },
+      },
+    }
+    scanOccurrences = append(scanOccurrences, occurrence)
+  }
 
-  scanOccurrences = append(scanOccurrences, occurrence)
 	return scanOccurrences
 }
