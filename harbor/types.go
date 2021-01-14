@@ -33,7 +33,7 @@ type Resource struct {
 
 // ScanOverview is...
 type ScanOverview struct {
-  Report *Report `json:"application/vnd.scanner.adapter.vuln.report.harbor+json\; version=1.0"`
+  Report *Report `json:"application/vnd.scanner.adapter.vuln.report.harbor+json; version=1.0"`
 }
 
 // is...

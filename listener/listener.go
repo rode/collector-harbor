@@ -50,7 +50,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		log.Error("error reading webhook event", zap.NamedError("error", err))
 		return
 	}
-	log.Info("Harbor event is here", zap.Any("event", event))
+	//log.Info("Harbor event is here", zap.Any("event", event))
 
 	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
@@ -62,7 +62,6 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		occurrence = createImagePushOccurrence(event.EventData, repo)
 	case "SCANNING_COMPLETED":
 		occurrence = createImageScanOccurrence(event.EventData, repo)
-	  log.Info("Scan overview is here", zap.Any("overview", event.EventData.Resources[0].ScanOverview))
     if (event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0) {
       scanOccurrences = getImageVulnerabilities(l, event.EventData)
     }
@@ -133,6 +132,9 @@ func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafea
 
   client := resty.New()
 
+	log.Info("Project is here %s", zap.Any("resp", eventData.Repository.Namespace))
+	log.Info("Repository is here %s", zap.Any("resp", eventData.Repository.Name))
+	log.Info("Tag is here %s", zap.Any("resp", eventData.Resources[0].Tag))
   //uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, eventData.Resources[0].Tag)
   uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, "4.6.0")
 
@@ -145,12 +147,13 @@ func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafea
 	}
 
 	log.Info("Resp is here %s", zap.Any("resp", resp.String()))
-	//report := &harbor.Report{}
-	//if err := json.NewDecoder(resp.RawRequest.GetBody()).Decode(report); err != nil {
+	scanOverview := &harbor.ScanOverview{}
+  json.Unmarshal(resp.Body(), &scanOverview)
+	//if err := json.NewDecoder(resp.RawResponse.Body).Decode(scanOverview); err != nil {
 	//	log.Error("error reading Vulnerabilities report from Harbor", zap.NamedError("error", err))
 	//	return scanOccurrences
 	//}
-	//log.Info("Report is here", zap.Any("report", report))
+	//log.Info("Scan overview is here", zap.Any("scanOverview", scanOverview))
 
 	occurrence := &grafeas_go_proto.Occurrence{
 		Resource: &grafeas_go_proto.Resource{

@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # Build the manager binary
-FROM golang:1.15-alpine as builder
+FROM golang:1.16beta1-alpine as builder
 
 WORKDIR /workspace
 
