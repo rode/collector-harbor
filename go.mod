@@ -3,7 +3,6 @@ module github.com/rode/collector-harbor
 go 1.15
 
 require (
-	github.com/go-resty/resty/v2 v2.4.0
 	github.com/liatrio/rode-api v0.0.0-20201111165410-30d476656f6f
 	github.com/nxadm/tail v1.4.5 // indirect
 	github.com/onsi/ginkgo v1.14.2

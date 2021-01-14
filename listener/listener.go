@@ -11,7 +11,6 @@ import (
 	"github.com/rode/collector-harbor/harbor"
 	"go.uber.org/zap"
 
-	"github.com/go-resty/resty/v2"
 	pb "github.com/liatrio/rode-api/proto/v1alpha1"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/common_go_proto"
 	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/discovery_go_proto"
@@ -44,31 +43,35 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 
 	event := &harbor.Event{}
 	if err := json.NewDecoder(request.Body).Decode(event); err != nil {
-		w.WriteHeader(500)
+		w.WriteHeader(500) // use enum instead of literal
 		fmt.Fprintf(w, "error reading webhook event")
 		log.Error("error reading webhook event", zap.NamedError("error", err))
 		return
 	}
-	//log.Info("Harbor event is here", zap.Any("event", event))
+	log.Info("Harbor event is here", zap.Any("event", event))
 
 	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
-	var scanOccurrences []*grafeas_go_proto.Occurrence
 	var occurrence *grafeas_go_proto.Occurrence
 
 	switch event.Type {
-	case "PUSH_ARTIFACT":
+	case "PUSH_ARTIFACT":  // use an enum here
 		occurrence = createImagePushOccurrence(event.EventData, repo)
-	case "SCANNING_COMPLETED":
+	case "SCANNING_COMPLETED":  // use an enum here
 		occurrence = createImageScanOccurrence(event.EventData, repo)
 		if event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0 {
-			scanOccurrences = getImageVulnerabilities(l, event.EventData)
+      scanOccurrences, err := l.getImageVulnerabilities(event.EventData)
+      if err != nil {
+        log.Error("Error creating occurrences for vulnerabilities", zap.Error(err))
+        w.WriteHeader(500) // use enum instead of literal
+        return
+      }
+	    occurrences = append(occurrences, scanOccurrences...)
 		}
 	default:
 		return
 	}
 	occurrences = append(occurrences, occurrence)
-	occurrences = append(occurrences, scanOccurrences...)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -97,7 +100,8 @@ func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafea
 		Details: &grafeas_go_proto.Occurrence_Discovered{
 			Discovered: &discovery_go_proto.Details{
 				Discovered: &discovery_go_proto.Discovered{
-					ContinuousAnalysis: 0,
+					ContinuousAnalysis: 0, // discovery_go_proto enum type
+					AnalysisStatus: 0, // Need to udpate
 				}},
 		},
 	}
@@ -117,6 +121,7 @@ func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafea
 			Discovered: &discovery_go_proto.Details{
 				Discovered: &discovery_go_proto.Discovered{
 					ContinuousAnalysis: 0,
+					AnalysisStatus: 0, // Need to udpate
 				}},
 		},
 	}
@@ -124,39 +129,36 @@ func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafea
 
 }
 
-func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafeas_go_proto.Occurrence {
+func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*grafeas_go_proto.Occurrence, error) {
 	log := l.logger.Named("ProcessEvent")
 
 	var scanOccurrences []*grafeas_go_proto.Occurrence
 
-	client := resty.New()
-
-	uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts", eventData.Repository.Namespace, eventData.Repository.Name)
-	resp, err := client.R().
-		EnableTrace().
-		Get(uri)
+	uri := fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts", eventData.Repository.Namespace, eventData.Repository.Name) // pull in Harbor endpoint from a config struct
+	resp, err := http.Get(uri)
+	if err != nil {
+		log.Error("Error finding Tag for image %s", eventData.Repository.RepoFullName, zap.Error(err))
+		return nil, err
+	}
 
 	artifacts := []*harbor.Artifact{}
-	json.Unmarshal(resp.Body(), &artifacts)
+	json.Unmarshal(resp.Body, &artifacts)
 
 	uri = fmt.Sprintf("http://harbor-harbor-core/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
-	resp, err = client.R().
-		EnableTrace().
-		Get(uri)
+	resp, err = http.Get(uri)
 	if err != nil {
-		log.Error("error reading Vulnerabilities report from Harbor", zap.NamedError("error", err))
-		return scanOccurrences
+		log.Error("error reading Vulnerabilities report from Harbor", zap.Error(err))
+		return nil, err
 	}
 
 	scanOverview := &harbor.ScanOverview{}
-	json.Unmarshal(resp.Body(), &scanOverview)
+	json.Unmarshal(resp.Body, scanOverview)
 
 	for _, vulnerability := range scanOverview.Report.Vulnerabilities {
 		occurrence := &grafeas_go_proto.Occurrence{
 			Resource: &grafeas_go_proto.Resource{
 				Uri: eventData.Repository.RepoFullName,
 			},
-			NoteName:   "projects/notes_project/notes/harbor",
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
 			CreateTime: timestamppb.Now(),
 			Details: &grafeas_go_proto.Occurrence_Vulnerability{
@@ -179,7 +181,6 @@ func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafea
 								Version: &package_go_proto.Version{
 									Name:     vulnerability.Package,
 									Revision: vulnerability.Version,
-									Epoch:    35,
 									Kind:     package_go_proto.Version_MINIMUM,
 								},
 							},
@@ -191,5 +192,5 @@ func getImageVulnerabilities(l *listener, eventData *harbor.EventData) []*grafea
 		scanOccurrences = append(scanOccurrences, occurrence)
 	}
 
-	return scanOccurrences
+	return scanOccurrences, nil
 }
