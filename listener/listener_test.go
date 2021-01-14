@@ -15,10 +15,10 @@ import (
 var _ = Describe("listener", func() {
 
 	var (
-		listener        Listener
-		rodeClient      *mockRodeClient
-		imagePushEvent  *harbor.Event
-    /* TODO: Uncomment after properly processing events */
+		listener       Listener
+		rodeClient     *mockRodeClient
+		imagePushEvent *harbor.Event
+		/* TODO: Uncomment after properly processing events */
 		//imageScanEvent  *harbor.Event
 		basicResource   *harbor.Resource
 		basicRepository *harbor.Repository
@@ -52,7 +52,7 @@ var _ = Describe("listener", func() {
 				Repository: basicRepository,
 			}}
 
-    /* TODO: Uncomment after properly processing events */
+		/* TODO: Uncomment after properly processing events */
 		//imageScanEvent = &harbor.Event{
 		//	Type:     "SCANNING_COMPLETED",
 		//	OccurAt:  1610046898,
@@ -98,7 +98,7 @@ var _ = Describe("listener", func() {
 			})
 		})
 
-    /* TODO: Uncomment after properly processing events */
+		/* TODO: Uncomment after properly processing events */
 		//When("using a valid image scan event", func() {
 		//	BeforeEach(func() {
 		//		body, _ = json.Marshal(imageScanEvent)
