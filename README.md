@@ -30,6 +30,10 @@ Build the Rode image:
 git clone https://github.com/rode/rode.git && cd rode
 docker build -t rode .
 ```
+> If you're running the Kind cluster, use the kind load:
+```
+kind load docker-image rode
+```
 
 Deploy rode locally using Helm:
 ```
@@ -40,13 +44,16 @@ helm install rode helm/rode/. --set=image.repository=rode --set=image.tag=latest
 
 Build the Harbor Collector:
 ```
+git clone https://github.com/rode/charts.git && cd charts
 docker build -t rode-collector-harbor .
-helm install rode-collector-harbor charts/rode-collector-harbor --set=image.repository=rode-collector-harbor --set=image.tag=latest
+```
+> If you're running the Kind cluster, use the kind load:
+```
+kind load docker-image rode-collector-harbor
 ```
 
 Deploy the Harbor Collector:
 ```
-git clone https://github.com/rode/charts.git && cd charts
 helm install rode-collector-harbor charts/rode-collector-harbor --set=image.repository=rode-collector-harbor --set=image.tag=latest
 ```
 
