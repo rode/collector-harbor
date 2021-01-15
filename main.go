@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/rode/collector-harbor/harbor"
 	"log"
 	"net/http"
 	"os"
@@ -34,7 +35,7 @@ func main() {
 
 	rodeClient := pb.NewRodeClient(conn)
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient)
+	l := listener.NewListener(logger.Named("listener"), rodeClient, c, harbor.NewClient())
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)

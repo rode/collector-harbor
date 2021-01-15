@@ -17,6 +17,7 @@ var _ = Describe("listener", func() {
 	var (
 		listener       Listener
 		rodeClient     *mockRodeClient
+		harborClient   *mockHarborClient
 		imagePushEvent *harbor.Event
 		/* TODO: Uncomment after properly processing events */
 		//imageScanEvent  *harbor.Event
@@ -63,7 +64,8 @@ var _ = Describe("listener", func() {
 		//	}}
 
 		rodeClient = &mockRodeClient{}
-		listener = NewListener(logger, rodeClient)
+		harborClient = &mockHarborClient{}
+		listener = NewListener(logger, rodeClient, config, harborClient)
 		rodeClient.expectedError = nil
 	})
 
