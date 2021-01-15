@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/rode/collector-harbor/harbor"
 	"log"
 	"net/http"
 	"os"
@@ -13,8 +14,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/rode/collector-harbor/listener"
 	"github.com/rode/collector-harbor/config"
+	"github.com/rode/collector-harbor/listener"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 
 	rodeClient := pb.NewRodeClient(conn)
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient)
+	l := listener.NewListener(logger.Named("listener"), rodeClient, harbor.NewClient())
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)

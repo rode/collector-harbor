@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
-  "io/ioutil"
-	"os"
 
-	"github.com/rode/collector-harbor/harbor"
 	"github.com/rode/collector-harbor/config"
+	"github.com/rode/collector-harbor/harbor"
 	"go.uber.org/zap"
 
 	pb "github.com/liatrio/rode-api/proto/v1alpha1"
@@ -24,8 +23,10 @@ import (
 )
 
 type listener struct {
-	rodeClient pb.RodeClient
-	logger     *zap.Logger
+	rodeClient   pb.RodeClient
+	logger       *zap.Logger
+	config       *config.Config
+	harborClient harbor.Client
 }
 
 type Listener interface {
@@ -33,10 +34,12 @@ type Listener interface {
 }
 
 // NewListener instantiates a listener including a zap logger and the rodeclient connection
-func NewListener(logger *zap.Logger, client pb.RodeClient) Listener {
+func NewListener(logger *zap.Logger, rodeClient pb.RodeClient, config *config.Config, harborClient harbor.Client) Listener {
 	return &listener{
-		rodeClient: client,
-		logger:     logger,
+		rodeClient:   rodeClient,
+		logger:       logger,
+		config:       config,
+		harborClient: harborClient,
 	}
 }
 
@@ -44,7 +47,6 @@ func NewListener(logger *zap.Logger, client pb.RodeClient) Listener {
 func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 
 	log := l.logger.Named("ProcessEvent")
-
 
 	event := &harbor.Event{}
 	if err := json.NewDecoder(request.Body).Decode(event); err != nil {
@@ -60,18 +62,18 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	var occurrence *grafeas_go_proto.Occurrence
 
 	switch event.Type {
-	case "PUSH_ARTIFACT":  // use an enum here
+	case "PUSH_ARTIFACT": // use an enum here
 		occurrence = createImagePushOccurrence(event.EventData, repo)
-	case "SCANNING_COMPLETED":  // use an enum here
+	case "SCANNING_COMPLETED": // use an enum here
 		occurrence = createImageScanOccurrence(event.EventData, repo)
 		if event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0 {
-      scanOccurrences, err := l.getImageVulnerabilities(event.EventData)
-      if err != nil {
-        log.Error("Error creating occurrences for vulnerabilities", zap.Error(err))
-        w.WriteHeader(http.StatusInternalServerError)
-        return
-      }
-	    occurrences = append(occurrences, scanOccurrences...)
+			scanOccurrences, err := l.getImageVulnerabilities(event.EventData)
+			if err != nil {
+				log.Error("Error creating occurrences for vulnerabilities", zap.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			occurrences = append(occurrences, scanOccurrences...)
 		}
 	default:
 		return
@@ -106,7 +108,7 @@ func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafea
 			Discovered: &discovery_go_proto.Details{
 				Discovered: &discovery_go_proto.Discovered{
 					ContinuousAnalysis: 0,
-					AnalysisStatus: discovery_go_proto.Discovered_AnalysisStatus(discovery_go_proto.Discovered_AnalysisStatus_value["SCANNING"]),
+					AnalysisStatus:     discovery_go_proto.Discovered_AnalysisStatus(discovery_go_proto.Discovered_AnalysisStatus_value["SCANNING"]),
 				}},
 		},
 	}
@@ -126,7 +128,7 @@ func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafea
 			Discovered: &discovery_go_proto.Details{
 				Discovered: &discovery_go_proto.Discovered{
 					ContinuousAnalysis: 0,
-					AnalysisStatus: discovery_go_proto.Discovered_AnalysisStatus(discovery_go_proto.Discovered_AnalysisStatus_value["FINISHED_SUCCESS"]),
+					AnalysisStatus:     discovery_go_proto.Discovered_AnalysisStatus(discovery_go_proto.Discovered_AnalysisStatus_value["FINISHED_SUCCESS"]),
 				}},
 		},
 	}
@@ -137,33 +139,27 @@ func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafea
 func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*grafeas_go_proto.Occurrence, error) {
 	log := l.logger.Named("ProcessEvent")
 
-	c, err := config.Build(os.Args[0], os.Args[1:])
-	if err != nil {
-		log.Error("Failed to load config", zap.Error(err))
-		return nil, err
-	}
-
 	var scanOccurrences []*grafeas_go_proto.Occurrence
 
-	uri := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts", c.HarborHost, eventData.Repository.Namespace, eventData.Repository.Name)
+	uri := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts", l.config.HarborHost, eventData.Repository.Namespace, eventData.Repository.Name)
 	resp, err := http.Get(uri)
 	if err != nil {
 		log.Error("Error finding Tag for image", zap.String("image", eventData.Repository.RepoFullName), zap.Error(err))
 		return nil, err
 	}
 
-  body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	artifacts := []*harbor.Artifact{}
 	json.Unmarshal(body, &artifacts)
 
-	uri = fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", c.HarborHost, eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
+	uri = fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", l.config.HarborHost, eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
 	resp, err = http.Get(uri)
 	if err != nil {
 		log.Error("error reading Vulnerabilities report from Harbor", zap.Error(err))
 		return nil, err
 	}
 
-  body, _ = ioutil.ReadAll(resp.Body)
+	body, _ = ioutil.ReadAll(resp.Body)
 	scanOverview := &harbor.ScanOverview{}
 	json.Unmarshal(body, scanOverview)
 
@@ -172,7 +168,7 @@ func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*graf
 			Resource: &grafeas_go_proto.Resource{
 				Uri: eventData.Repository.RepoFullName,
 			},
-      NoteName:   "projects/notes_project/notes/harbor",
+			NoteName:   "projects/notes_project/notes/harbor",
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
 			CreateTime: timestamppb.Now(),
 			Details: &grafeas_go_proto.Occurrence_Vulnerability{
