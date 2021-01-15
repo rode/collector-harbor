@@ -17,6 +17,7 @@ RUN go mod download
 COPY main.go main.go
 COPY listener listener
 COPY harbor harbor
+COPY config config
 
 # Build
 RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o rode-collector-harbor

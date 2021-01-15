@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,27 +14,19 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/rode/collector-harbor/listener"
-)
-
-var (
-	debug    bool
-	port     int
-	rodeHost string
+	"github.com/rode/collector-harbor/config"
 )
 
 func main() {
-	flag.IntVar(&port, "port", 8080, "the port that the harbor collector should listen on")
-	flag.BoolVar(&debug, "debug", false, "when set, debug mode will be enabled")
-	flag.StringVar(&rodeHost, "rode-host", "rode:50051", "the host to use to connect to rode")
 
-	flag.Parse()
+	c, err := config.Build(os.Args[0], os.Args[1:])
 
-	logger, err := createLogger(debug)
+	logger, err := createLogger(c.Debug)
 	if err != nil {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
-	conn, err := grpc.Dial(rodeHost, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(c.RodeHost, grpc.WithInsecure(), grpc.WithBlock())
 	defer conn.Close()
 	if err != nil {
 		logger.Fatal("failed to establish grpc connection to Rode API", zap.NamedError("error", err))
@@ -49,7 +40,7 @@ func main() {
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "I'm healthy") })
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
+		Addr:    fmt.Sprintf(":%d", c.Port),
 		Handler: mux,
 	}
 
