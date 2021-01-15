@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
-  "io/ioutil"
-	"os"
 
-	"github.com/rode/collector-harbor/harbor"
 	"github.com/rode/collector-harbor/config"
+	"github.com/rode/collector-harbor/harbor"
 	"go.uber.org/zap"
 
 	pb "github.com/liatrio/rode-api/proto/v1alpha1"
@@ -45,7 +45,6 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 
 	log := l.logger.Named("ProcessEvent")
 
-
 	event := &harbor.Event{}
 	if err := json.NewDecoder(request.Body).Decode(event); err != nil {
 		w.WriteHeader(http.StatusInternalServerError) // use enum instead of literal
@@ -60,18 +59,20 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	var occurrence *grafeas_go_proto.Occurrence
 
 	switch event.Type {
-	case "PUSH_ARTIFACT":  // use an enum here
+	case "PUSH_ARTIFACT": // use an enum here
 		occurrence = createImagePushOccurrence(event.EventData, repo)
-	case "SCANNING_COMPLETED":  // use an enum here
+	case "SCANNING_FAILED": // come back to this..
+		occurrence = createImagePushOccurrence(event.EventData, repo)
+	case "SCANNING_COMPLETED": // use an enum here
 		occurrence = createImageScanOccurrence(event.EventData, repo)
 		if event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0 {
-      scanOccurrences, err := l.getImageVulnerabilities(event.EventData)
-      if err != nil {
-        log.Error("Error creating occurrences for vulnerabilities", zap.Error(err))
-        w.WriteHeader(http.StatusInternalServerError)
-        return
-      }
-	    occurrences = append(occurrences, scanOccurrences...)
+			scanOccurrences, err := l.getImageVulnerabilities(event.EventData)
+			if err != nil {
+				log.Error("Error creating occurrences for vulnerabilities", zap.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			occurrences = append(occurrences, scanOccurrences...)
 		}
 	default:
 		return
@@ -105,8 +106,8 @@ func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafea
 		Details: &grafeas_go_proto.Occurrence_Discovered{
 			Discovered: &discovery_go_proto.Details{
 				Discovered: &discovery_go_proto.Discovered{
-					ContinuousAnalysis: 0,
-					AnalysisStatus: discovery_go_proto.Discovered_AnalysisStatus(discovery_go_proto.Discovered_AnalysisStatus_value["SCANNING"]),
+					ContinuousAnalysis: 0, // use an enum here
+					AnalysisStatus:     discovery_go_proto.Discovered_SCANNING,
 				}},
 		},
 	}
@@ -126,7 +127,7 @@ func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafea
 			Discovered: &discovery_go_proto.Details{
 				Discovered: &discovery_go_proto.Discovered{
 					ContinuousAnalysis: 0,
-					AnalysisStatus: discovery_go_proto.Discovered_AnalysisStatus(discovery_go_proto.Discovered_AnalysisStatus_value["FINISHED_SUCCESS"]),
+					AnalysisStatus:     discovery_go_proto.Discovered_FINISHED_SUCCESS,
 				}},
 		},
 	}
@@ -152,7 +153,7 @@ func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*graf
 		return nil, err
 	}
 
-  body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 	artifacts := []*harbor.Artifact{}
 	json.Unmarshal(body, &artifacts)
 
@@ -163,7 +164,7 @@ func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*graf
 		return nil, err
 	}
 
-  body, _ = ioutil.ReadAll(resp.Body)
+	body, _ = ioutil.ReadAll(resp.Body)
 	scanOverview := &harbor.ScanOverview{}
 	json.Unmarshal(body, scanOverview)
 
@@ -172,7 +173,7 @@ func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*graf
 			Resource: &grafeas_go_proto.Resource{
 				Uri: eventData.Repository.RepoFullName,
 			},
-      NoteName:   "projects/notes_project/notes/harbor",
+			NoteName:   "projects/notes_project/notes/harbor",
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
 			CreateTime: timestamppb.Now(),
 			Details: &grafeas_go_proto.Occurrence_Vulnerability{

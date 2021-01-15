@@ -5,12 +5,12 @@ import (
 )
 
 type Config struct {
-	Port         int
-	Debug        bool
-	RodeHost     string
-	HarborHost   string
+	Port       int
+	Debug      bool
+	RodeHost   string
+	HarborHost string
+	/* Need to add creds back */
 }
-
 
 func Build(name string, args []string) (*Config, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)

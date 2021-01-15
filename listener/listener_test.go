@@ -94,7 +94,7 @@ var _ = Describe("listener", func() {
 			})
 
 			It("should not error out", func() {
-				Expect(rr.Result().StatusCode).To(Equal(200))
+				Expect(rr.Result().StatusCode).To(Equal(http.StatusOK))
 			})
 		})
 
@@ -115,7 +115,7 @@ var _ = Describe("listener", func() {
 			})
 
 			It("should return a bad response", func() {
-				Expect(rr.Code).To(Equal(500))
+				Expect(rr.Code).To(Equal(http.StatusInternalServerError))
 				Expect(rr.Body.String()).To(ContainSubstring("error reading webhook event"))
 			})
 		})
@@ -127,7 +127,7 @@ var _ = Describe("listener", func() {
 			})
 
 			It("should return a bad response", func() {
-				Expect(rr.Code).To(Equal(500))
+				Expect(rr.Code).To(Equal(http.StatusInternalServerError))
 			})
 		})
 	})

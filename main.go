@@ -13,8 +13,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"github.com/rode/collector-harbor/listener"
 	"github.com/rode/collector-harbor/config"
+	"github.com/rode/collector-harbor/listener"
 )
 
 func main() {
