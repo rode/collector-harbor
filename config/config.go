@@ -8,7 +8,7 @@ type Config struct {
 	Port         int
 	Debug        bool
 	RodeHost     string
-  harborConfig *HarborConfig
+  HarborConfig *HarborConfig
 }
 
 type HarborConfig struct {
@@ -21,7 +21,7 @@ func Build(name string, args []string) (*Config, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 
   c := &Config{
-    harborConfig: &HarborConfig{},
+    HarborConfig: &HarborConfig{},
   }
 
 	flag.IntVar(&c.Port, "port", 8080, "the port that the harbor collector should listen on")

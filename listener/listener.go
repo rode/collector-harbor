@@ -143,7 +143,7 @@ func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*graf
 
 	var scanOccurrences []*grafeas_go_proto.Occurrence
 
-	uri := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts", l.config.HarborHost, eventData.Repository.Namespace, eventData.Repository.Name)
+	uri := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts", l.config.HarborConfig.Host, eventData.Repository.Namespace, eventData.Repository.Name)
 	resp, err := http.Get(uri)
 	if err != nil {
 		log.Error("Error finding Tag for image", zap.String("image", eventData.Repository.RepoFullName), zap.Error(err))
@@ -154,7 +154,7 @@ func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*graf
 	artifacts := []*harbor.Artifact{}
 	json.Unmarshal(body, &artifacts)
 
-	uri = fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", l.config.HarborHost, eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
+	uri = fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", l.config.HarborConfig.Host, eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
 	resp, err = http.Get(uri)
 	if err != nil {
 		log.Error("error reading Vulnerabilities report from Harbor", zap.Error(err))
