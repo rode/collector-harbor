@@ -30,10 +30,10 @@ func main() {
 	}
 
 	conn, err := grpc.Dial(conf.RodeHost, grpc.WithInsecure(), grpc.WithBlock())
-	defer conn.Close()
 	if err != nil {
-		logger.Fatal("failed to establish grpc connection to Rode API", zap.NamedError("error", err))
+		logger.Fatal("failed to establish grpc connection to Rode API", zap.Error(err))
 	}
+	defer conn.Close()
 
 	rodeClient := pb.NewRodeClient(conn)
 	harborClient := harbor.NewClient(conf.HarborConfig)
