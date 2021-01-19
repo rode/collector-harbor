@@ -43,7 +43,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	log.Debug("received harbor event", zap.Any("event", event), zap.Any("project", event.ID), zap.Any("ID", event.ID))
+	log.Debug("received harbor event", zap.Any("event", event))
 
 	var occurrences []*grafeas_go_proto.Occurrence
 	// for _, condition := range event.QualityGate.Conditions {
