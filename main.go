@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/rode/collector-harbor/config"
+	"github.com/rode/collector-harbor/harbor"
 	"log"
 	"net/http"
 	"os"
@@ -14,13 +14,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
+	"github.com/rode/collector-harbor/config"
 	"github.com/rode/collector-harbor/listener"
-)
-
-var (
-	debug    bool
-	port     int
-	rodeHost string
 )
 
 func main() {
@@ -35,20 +30,21 @@ func main() {
 	}
 
 	conn, err := grpc.Dial(conf.RodeHost, grpc.WithInsecure(), grpc.WithBlock())
-	defer conn.Close()
 	if err != nil {
-		logger.Fatal("failed to establish grpc connection to Rode API", zap.NamedError("error", err))
+		logger.Fatal("failed to establish grpc connection to Rode API", zap.Error(err))
 	}
+	defer conn.Close()
 
 	rodeClient := pb.NewRodeClient(conn)
+	harborClient := harbor.NewClient(conf.HarborConfig)
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient)
+	l := listener.NewListener(logger.Named("listener"), rodeClient, conf, harborClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "I'm healthy") })
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
+		Addr:    fmt.Sprintf(":%d", conf.Port),
 		Handler: mux,
 	}
 
