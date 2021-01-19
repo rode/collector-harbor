@@ -19,29 +19,32 @@ import (
 )
 
 func main() {
+	conf, err := config.Build(os.Args[0], os.Args[1:])
+	if err != nil {
+		log.Fatalf("error parsing flags: %v", err)
+	}
 
-	c, err := config.Build(os.Args[0], os.Args[1:])
-
-	logger, err := createLogger(c.Debug)
+	logger, err := createLogger(conf.Debug)
 	if err != nil {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
-	conn, err := grpc.Dial(c.RodeHost, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(conf.RodeHost, grpc.WithInsecure(), grpc.WithBlock())
 	defer conn.Close()
 	if err != nil {
 		logger.Fatal("failed to establish grpc connection to Rode API", zap.NamedError("error", err))
 	}
 
 	rodeClient := pb.NewRodeClient(conn)
+	harborClient := harbor.NewClient(conf.HarborConfig)
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient, c, harbor.NewClient())
+	l := listener.NewListener(logger.Named("listener"), rodeClient, conf, harborClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "I'm healthy") })
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", c.Port),
+		Addr:    fmt.Sprintf(":%d", conf.Port),
 		Handler: mux,
 	}
 
