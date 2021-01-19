@@ -1,54 +1,86 @@
 package harbor
 
 import (
-	"fmt"
+	"encoding/base64"
 	"encoding/json"
-	"net/http"
-	"io/ioutil"
-
-	"go.uber.org/zap"
+	"fmt"
 	"github.com/rode/collector-harbor/config"
+	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 type Client interface {
-	GetArtifacts(log *zap.Logger, project, repository string, eventData *EventData) ([]*Artifact, error)
-	GetArtifactVulnerabilities(log *zap.Logger, project, repository, artifacts []*Artifact, eventData *EventData) ([]byte, error)
+	GetArtifacts(project, repository string) ([]*Artifact, error)
+	GetArtifactReport(project, repository, tag string) (*Report, error)
 }
 
 type client struct {
-  HarborConfig *config.HarborConfig
+	harborConfig   *config.HarborConfig
+	basicAuthToken string
+	httpClient     *http.Client
 }
 
-func NewClient() Client {
-	return &client{}
-}
-
-func (c *client) GetArtifacts(log *zap.Logger, project, repository string, eventData *EventData) ([]*Artifact, error) {
-	uri := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts", c.HarborConfig.Host, eventData.Repository.Namespace, eventData.Repository.Name)
-	resp, err := http.Get(uri)
-	if err != nil {
-		log.Error("Error finding Tag for image", zap.String("image", eventData.Repository.RepoFullName), zap.Error(err))
-		return nil, err
+func NewClient(harborConfig *config.HarborConfig) Client {
+	c := &client{
+		harborConfig: harborConfig,
+		httpClient: &http.Client{
+			Timeout: time.Second * 10,
+		},
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	artifacts := []*Artifact{}
-	json.Unmarshal(body, &artifacts)
+	if harborConfig.Username != "" && harborConfig.Password != "" {
+		c.basicAuthToken = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", harborConfig.Username, harborConfig.Password)))
+	}
+
+	return c
+}
+
+func (c *client) GetArtifacts(project, repository string) ([]*Artifact, error) {
+	var artifacts []*Artifact
+
+	uri := fmt.Sprintf("/api/v2.0/projects/%s/repositories/%s/artifacts", project, repository)
+
+	err := c.get(uri, &artifacts)
+	if err != nil {
+		return nil, err
+	}
 
 	return artifacts, nil
 }
 
-func (c *client) GetArtifactVulnerabilities(log *zap.Logger, project, repository, artifacts []*Artifact, eventData *EventData) ([]byte, error) {
-  uri := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", c.HarborConfig.Host, eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
-  resp, err := http.Get(uri)
+func (c *client) GetArtifactReport(project, repository, tag string) (*Report, error) {
+	var scanOverview ScanOverview
+
+	uri := fmt.Sprintf("/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", project, repository, tag)
+
+	err := c.get(uri, &scanOverview)
 	if err != nil {
-		log.Error("error reading Vulnerabilities report from Harbor", zap.Error(err))
 		return nil, err
 	}
 
-  body, _ := ioutil.ReadAll(resp.Body)
-	scanOverview := &ScanOverview{}
-	json.Unmarshal(body, scanOverview)
+	return scanOverview.Report, nil
+}
 
-	return body, nil
+func (c *client) get(uri string, resource interface{}) error {
+	req, err := http.NewRequest(http.MethodGet, c.harborConfig.Host+uri, nil)
+	if err != nil {
+		return err
+	}
+
+	if c.basicAuthToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", c.basicAuthToken))
+	}
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(body, resource)
 }
