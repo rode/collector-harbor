@@ -2,10 +2,10 @@ package harbor
 
 // Event received
 type Event struct {
-	Type      string     `json:"type"`
-	OccurAt   int        `json:"occur_at"`
-	Operator  string     `json:"operator"`
-	EventData *EventData `json:"event_data"`
+	Type     WebhookEvent `json:"type"`
+	OccurAt  int64        `json:"occur_at"`
+	Operator string       `json:"operator"`
+	Data     *EventData   `json:"event_data"`
 }
 
 // Vulnerability is...
@@ -85,9 +85,18 @@ type Scanner struct {
 }
 
 type Artifact struct {
-	Tags []*Tag `json:"tags"`
+	Tags   []*Tag `json:"tags"`
+	Digest string `json:"digest"`
 }
 
 type Tag struct {
 	Name string `json:"name"`
 }
+
+type WebhookEvent string
+
+const (
+	PUSH_ARTIFACT      WebhookEvent = "PUSH_ARTIFACT"
+	SCANNING_FAILED    WebhookEvent = "SCANNING_FAILED"
+	SCANNING_COMPLETED WebhookEvent = "SCANNING_COMPLETED"
+)

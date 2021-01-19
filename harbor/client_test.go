@@ -182,7 +182,8 @@ func randomArtifacts() []*Artifact {
 
 	for i := 0; i < fake.Number(1, 3); i++ {
 		artifact := &Artifact{
-			Tags: []*Tag{},
+			Tags:   []*Tag{},
+			Digest: fake.LetterN(10),
 		}
 
 		for j := 0; j < fake.Number(1, 3); j++ {
