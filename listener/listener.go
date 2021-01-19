@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -45,164 +44,154 @@ func NewListener(logger *zap.Logger, rodeClient pb.RodeClient, config *config.Co
 
 // ProcessEvent handles incoming webhook events
 func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
-
 	log := l.logger.Named("ProcessEvent")
 
 	event := &harbor.Event{}
 	if err := json.NewDecoder(request.Body).Decode(event); err != nil {
-		w.WriteHeader(http.StatusInternalServerError) // use enum instead of literal
-		fmt.Fprintf(w, "error reading webhook event")
-		log.Error("error reading webhook event", zap.NamedError("error", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Error("error reading webhook event", zap.Error(err))
 		return
 	}
-	log.Info("Harbor event is here", zap.Any("event", event))
+	log = log.With(zap.Any("harbor event", event))
 
-	repo := event.EventData.Repository.Name
 	var occurrences []*grafeas_go_proto.Occurrence
-	var occurrence *grafeas_go_proto.Occurrence
 
-	switch event.Type {
-	case "PUSH_ARTIFACT": // use an enum here
-		occurrence = createImagePushOccurrence(event.EventData, repo)
-	case "SCANNING_FAILED": // come back to this..
-		occurrence = createImagePushOccurrence(event.EventData, repo)
-	case "SCANNING_COMPLETED":
-		occurrence = createImageScanOccurrence(event.EventData, repo)
-		if event.EventData.Resources[0].ScanOverview.Report.Summary.Total > 0 {
-			scanOccurrences, err := l.getImageVulnerabilities(event.EventData)
+	if event.Type == harbor.PUSH_ARTIFACT || event.Type == harbor.SCANNING_FAILED {
+		occurrences = append(occurrences, createDiscoveryOccurrence(event))
+	}
+
+	if event.Type == harbor.SCANNING_COMPLETED {
+		occurrences = append(occurrences, createDiscoveryOccurrence(event))
+		if event.Data.Resources[0].ScanOverview.Report.Summary.Total > 0 {
+			scanOccurrences, err := l.createVulnerabilityOccurrences(event)
 			if err != nil {
-				log.Error("Error creating occurrences for vulnerabilities", zap.Error(err))
+				log.Error("error creating occurrences for vulnerabilities", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			occurrences = append(occurrences, scanOccurrences...)
 		}
-	default:
-		return
 	}
-	occurrences = append(occurrences, occurrence)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	response, err := l.rodeClient.BatchCreateOccurrences(ctx, &pb.BatchCreateOccurrencesRequest{
 		Occurrences: occurrences,
 	})
 	if err != nil {
-		log.Error("error sending occurrences to rode", zap.NamedError("error", err))
+		log.Error("error sending occurrences to rode", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	log.Debug("response payload", zap.Any("response", response))
+	log.Debug("rode response payload", zap.Any("response", response))
 	w.WriteHeader(http.StatusOK)
 }
 
-func createImagePushOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
-	occurrence := &grafeas_go_proto.Occurrence{
+func createDiscoveryOccurrence(event *harbor.Event) *grafeas_go_proto.Occurrence {
+	status := discovery_go_proto.Discovered_SCANNING
+	if event.Type == harbor.SCANNING_FAILED {
+		status = discovery_go_proto.Discovered_FINISHED_FAILED
+	} else if event.Type == harbor.SCANNING_COMPLETED {
+		status = discovery_go_proto.Discovered_FINISHED_SUCCESS
+	}
+
+	return &grafeas_go_proto.Occurrence{
 		Resource: &grafeas_go_proto.Resource{
-			Uri: repo,
+			Uri: resourceUri(event),
 		},
-		NoteName:   "projects/notes_project/notes/harbor",
 		Kind:       common_go_proto.NoteKind_DISCOVERY,
-		CreateTime: timestamppb.Now(),
+		CreateTime: eventTimestamp(event),
 		Details: &grafeas_go_proto.Occurrence_Discovered{
 			Discovered: &discovery_go_proto.Details{
 				Discovered: &discovery_go_proto.Discovered{
 					ContinuousAnalysis: discovery_go_proto.Discovered_CONTINUOUS_ANALYSIS_UNSPECIFIED,
-					AnalysisStatus:     discovery_go_proto.Discovered_SCANNING,
+					AnalysisStatus:     status,
 				}},
 		},
 	}
-	return occurrence
 }
 
-func createImageScanOccurrence(eventData *harbor.EventData, repo string) *grafeas_go_proto.Occurrence {
-
-	occurrence := &grafeas_go_proto.Occurrence{
-		Resource: &grafeas_go_proto.Resource{
-			Uri: repo,
-		},
-		NoteName:   "projects/notes_project/notes/harbor",
-		Kind:       common_go_proto.NoteKind_DISCOVERY,
-		CreateTime: timestamppb.Now(),
-		Details: &grafeas_go_proto.Occurrence_Discovered{
-			Discovered: &discovery_go_proto.Details{
-				Discovered: &discovery_go_proto.Discovered{
-					ContinuousAnalysis: discovery_go_proto.Discovered_CONTINUOUS_ANALYSIS_UNSPECIFIED,
-					AnalysisStatus:     discovery_go_proto.Discovered_FINISHED_SUCCESS,
-				}},
-		},
-	}
-	return occurrence
-
-}
-
-func (l *listener) getImageVulnerabilities(eventData *harbor.EventData) ([]*grafeas_go_proto.Occurrence, error) {
-	log := l.logger.Named("ProcessEvent")
-
-	var scanOccurrences []*grafeas_go_proto.Occurrence
-
-	uri := fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts", l.config.HarborConfig.Host, eventData.Repository.Namespace, eventData.Repository.Name)
-	resp, err := http.Get(uri)
+func (l *listener) createVulnerabilityOccurrences(event *harbor.Event) ([]*grafeas_go_proto.Occurrence, error) {
+	artifacts, err := l.harborClient.GetArtifacts(event.Data.Repository.Namespace, event.Data.Repository.Name)
 	if err != nil {
-		log.Error("Error finding Tag for image", zap.String("image", eventData.Repository.RepoFullName), zap.Error(err))
 		return nil, err
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	artifacts := []*harbor.Artifact{}
-	json.Unmarshal(body, &artifacts)
+	var artifactTag string
+	for _, artifact := range artifacts {
+		if artifact.Digest == event.Data.Resources[0].Digest {
+			artifactTag = artifact.Tags[0].Name
+			break
+		}
+	}
 
-	uri = fmt.Sprintf("%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", l.config.HarborConfig.Host, eventData.Repository.Namespace, eventData.Repository.Name, artifacts[0].Tags[0].Name)
-	resp, err = http.Get(uri)
+	if artifactTag == "" {
+		return nil, fmt.Errorf("unable to find tag for artifact with uri %s", resourceUri(event))
+	}
+
+	report, err := l.harborClient.GetArtifactReport(event.Data.Repository.Namespace, event.Data.Repository.Name, artifactTag)
 	if err != nil {
-		log.Error("error reading Vulnerabilities report from Harbor", zap.Error(err))
 		return nil, err
 	}
 
-	body, _ = ioutil.ReadAll(resp.Body)
-	scanOverview := &harbor.ScanOverview{}
-	json.Unmarshal(body, scanOverview)
-
-	for _, vulnerability := range scanOverview.Report.Vulnerabilities {
+	var occurrences []*grafeas_go_proto.Occurrence
+	for _, vulnerability := range report.Vulnerabilities {
 		occurrence := &grafeas_go_proto.Occurrence{
 			Resource: &grafeas_go_proto.Resource{
-				Uri: eventData.Repository.RepoFullName,
+				Uri: resourceUri(event),
 			},
-			NoteName:   "projects/notes_project/notes/harbor",
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
-			CreateTime: timestamppb.Now(),
+			CreateTime: eventTimestamp(event),
 			Details: &grafeas_go_proto.Occurrence_Vulnerability{
 				Vulnerability: &vulnerability_go_proto.Details{
-					Type:             "docker",
-					Severity:         vulnerability_go_proto.Severity(vulnerability_go_proto.Severity_value[strings.ToUpper(vulnerability.Severity)]),
-					ShortDescription: vulnerability.Description,
-					RelatedUrls: []*common_go_proto.RelatedUrl{
-						{
-							Url: eventData.Resources[0].ResourceUrl,
-						},
-					},
-					EffectiveSeverity: vulnerability_go_proto.Severity_CRITICAL,
-					PackageIssue: []*vulnerability_go_proto.PackageIssue{
-						{
-							SeverityName: vulnerability.Severity,
-							AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
-								CpeUri:  eventData.Resources[0].ResourceUrl,
-								Package: vulnerability.Package,
-								Version: &package_go_proto.Version{
-									Name:     vulnerability.Package,
-									Revision: vulnerability.Version,
-									Kind:     package_go_proto.Version_MINIMUM,
-								},
-							},
-						},
-					},
+					Type:              "docker",
+					EffectiveSeverity: vulnerability_go_proto.Severity(vulnerability_go_proto.Severity_value[strings.ToUpper(vulnerability.Severity)]),
+					ShortDescription:  vulnerability.Description,
+					RelatedUrls:       relatedUrls(vulnerability),
+					PackageIssue:      vulnPackageIssue(vulnerability),
 				},
 			},
 		}
-		scanOccurrences = append(scanOccurrences, occurrence)
+		occurrences = append(occurrences, occurrence)
 	}
 
-	return scanOccurrences, nil
+	return occurrences, nil
+}
+
+func resourceUri(event *harbor.Event) string {
+	base := strings.Split(event.Data.Resources[0].ResourceUrl, ":")[0]
+
+	return fmt.Sprintf("%s@%s", base, event.Data.Resources[0].Digest)
+}
+
+func eventTimestamp(event *harbor.Event) *timestamppb.Timestamp {
+	return timestamppb.New(time.Unix(event.OccurAt, 0))
+}
+
+func relatedUrls(vuln *harbor.Vulnerability) []*common_go_proto.RelatedUrl {
+	var result []*common_go_proto.RelatedUrl
+	for _, link := range vuln.Links {
+		result = append(result, &common_go_proto.RelatedUrl{
+			Url: link,
+		})
+	}
+
+	return result
+}
+
+func vulnPackageIssue(vuln *harbor.Vulnerability) []*vulnerability_go_proto.PackageIssue {
+	return []*vulnerability_go_proto.PackageIssue{
+		{
+			AffectedLocation: &vulnerability_go_proto.VulnerabilityLocation{
+				CpeUri:  fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", vuln.ID),
+				Package: vuln.Package,
+				Version: &package_go_proto.Version{
+					Name: vuln.Package,
+					Kind: package_go_proto.Version_NORMAL,
+				},
+			},
+		},
+	}
 }
