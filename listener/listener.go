@@ -63,7 +63,8 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 
 	if event.Type == harbor.SCANNING_COMPLETED {
 		occurrences = append(occurrences, createDiscoveryOccurrence(event))
-		if event.Data.Resources[0].ScanOverview.Report.Summary.Total > 0 {
+		report := event.Data.Resources[0].ScanOverview.Report
+		if report != nil && report.Summary.Total > 0 {
 			scanOccurrences, err := l.createVulnerabilityOccurrences(event)
 			if err != nil {
 				log.Error("error creating occurrences for vulnerabilities", zap.Error(err))
