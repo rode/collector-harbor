@@ -53,6 +53,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	log = log.With(zap.Any("harbor event", event))
+	log.Debug("received event from harbor")
 
 	var occurrences []*grafeas_go_proto.Occurrence
 
@@ -101,6 +102,7 @@ func createDiscoveryOccurrence(event *harbor.Event) *grafeas_go_proto.Occurrence
 		Resource: &grafeas_go_proto.Resource{
 			Uri: resourceUri(event),
 		},
+		NoteName:   "projects/rode/notes/harbor",
 		Kind:       common_go_proto.NoteKind_DISCOVERY,
 		CreateTime: eventTimestamp(event),
 		Details: &grafeas_go_proto.Occurrence_Discovered{
@@ -142,6 +144,7 @@ func (l *listener) createVulnerabilityOccurrences(event *harbor.Event) ([]*grafe
 			Resource: &grafeas_go_proto.Resource{
 				Uri: resourceUri(event),
 			},
+			NoteName:   "projects/rode/notes/harbor",
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
 			CreateTime: eventTimestamp(event),
 			Details: &grafeas_go_proto.Occurrence_Vulnerability{
