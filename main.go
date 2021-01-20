@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"github.com/rode/collector-harbor/harbor"
+	"google.golang.org/grpc/credentials"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	pb "github.com/liatrio/rode-api/proto/v1alpha1"
 	"go.uber.org/zap"
@@ -29,9 +32,20 @@ func main() {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
-	conn, err := grpc.Dial(conf.RodeHost, grpc.WithInsecure(), grpc.WithBlock())
+	dialOptions := []grpc.DialOption{
+		grpc.WithBlock(),
+	}
+	if conf.RodeConfig.Insecure {
+		dialOptions = append(dialOptions, grpc.WithInsecure())
+	} else {
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, conf.RodeConfig.Host, dialOptions...)
 	if err != nil {
-		logger.Fatal("failed to establish grpc connection to Rode API", zap.Error(err))
+		logger.Fatal("failed to establish grpc connection to Rode", zap.Error(err))
 	}
 	defer conn.Close()
 
@@ -51,7 +65,7 @@ func main() {
 	go func() {
 		err = server.ListenAndServe()
 		if err != nil {
-			logger.Fatal("could not start http server...", zap.NamedError("error", err))
+			logger.Fatal("could not start http server...", zap.Error(err))
 		}
 	}()
 
@@ -64,7 +78,7 @@ func main() {
 
 	err = server.Shutdown(context.Background())
 	if err != nil {
-		logger.Fatal("could not shutdown http server...", zap.NamedError("error", err))
+		logger.Fatal("could not shutdown http server...", zap.Error(err))
 	}
 }
 
