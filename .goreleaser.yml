@@ -1,0 +1,33 @@
+project_name: rode-collector-harbor
+before:
+  hooks:
+    - go mod download
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+dockers:
+  - image_templates:
+      - "ghcr.io/rode/collector-harbor:latest"
+      - "ghcr.io/rode/collector-harbor:{{ .Tag }}"
+      - "ghcr.io/rode/collector-harbor:v{{ .Major }}"
+    extra_files:
+      - "go.mod"
+      - "go.sum"
+      - "main.go"
+      - "config"
+      - "harbor"
+      - "listener"
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
