@@ -2,25 +2,23 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
-	"github.com/rode/collector-harbor/config"
+	"github.com/rode/collector-harbor/harbor"
+	"google.golang.org/grpc/credentials"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	pb "github.com/liatrio/rode-api/proto/v1alpha1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
+	"github.com/rode/collector-harbor/config"
 	"github.com/rode/collector-harbor/listener"
-)
-
-var (
-	debug    bool
-	port     int
-	rodeHost string
 )
 
 func main() {
@@ -34,28 +32,40 @@ func main() {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
-	conn, err := grpc.Dial(conf.RodeHost, grpc.WithInsecure(), grpc.WithBlock())
-	defer conn.Close()
-	if err != nil {
-		logger.Fatal("failed to establish grpc connection to Rode API", zap.NamedError("error", err))
+	dialOptions := []grpc.DialOption{
+		grpc.WithBlock(),
+	}
+	if conf.RodeConfig.Insecure {
+		dialOptions = append(dialOptions, grpc.WithInsecure())
+	} else {
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	}
 
-	rodeClient := pb.NewRodeClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, conf.RodeConfig.Host, dialOptions...)
+	if err != nil {
+		logger.Fatal("failed to establish grpc connection to Rode", zap.Error(err))
+	}
+	defer conn.Close()
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient)
+	rodeClient := pb.NewRodeClient(conn)
+	harborClient := harbor.NewClient(conf.HarborConfig)
+
+	l := listener.NewListener(logger.Named("listener"), rodeClient, conf, harborClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "I'm healthy") })
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
+		Addr:    fmt.Sprintf(":%d", conf.Port),
 		Handler: mux,
 	}
 
 	go func() {
 		err = server.ListenAndServe()
 		if err != nil {
-			logger.Fatal("could not start http server...", zap.NamedError("error", err))
+			logger.Fatal("could not start http server...", zap.Error(err))
 		}
 	}()
 
@@ -68,7 +78,7 @@ func main() {
 
 	err = server.Shutdown(context.Background())
 	if err != nil {
-		logger.Fatal("could not shutdown http server...", zap.NamedError("error", err))
+		logger.Fatal("could not shutdown http server...", zap.Error(err))
 	}
 }
 

@@ -18,9 +18,11 @@ func TestConfig(t *testing.T) {
 			name:  "defaults",
 			flags: []string{},
 			expected: &Config{
-				Port:     8080,
-				Debug:    false,
-				RodeHost: "rode:50051",
+				Port:  8080,
+				Debug: false,
+				RodeConfig: &RodeConfig{
+					Host: "rode:50051",
+				},
 				HarborConfig: &HarborConfig{
 					Host: "http://harbor-harbor-core",
 				},
@@ -40,9 +42,11 @@ func TestConfig(t *testing.T) {
 			name:  "Rode host",
 			flags: []string{"--rode-host=bar"},
 			expected: &Config{
-				Port:     8080,
-				Debug:    false,
-				RodeHost: "bar",
+				Port:  8080,
+				Debug: false,
+				RodeConfig: &RodeConfig{
+					Host: "bar",
+				},
 				HarborConfig: &HarborConfig{
 					Host: "http://harbor-harbor-core",
 				},
@@ -52,9 +56,11 @@ func TestConfig(t *testing.T) {
 			name:  "Harbor host",
 			flags: []string{"--harbor-host=foo"},
 			expected: &Config{
-				Port:     8080,
-				Debug:    false,
-				RodeHost: "rode:50051",
+				Port:  8080,
+				Debug: false,
+				RodeConfig: &RodeConfig{
+					Host: "rode:50051",
+				},
 				HarborConfig: &HarborConfig{
 					Host: "foo",
 				},
