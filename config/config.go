@@ -20,6 +20,7 @@ type HarborConfig struct {
 	Host     string
 	Username string
 	Password string
+	Insecure bool
 }
 
 func Build(name string, args []string) (*Config, error) {
@@ -39,6 +40,7 @@ func Build(name string, args []string) (*Config, error) {
 	flags.StringVar(&c.HarborConfig.Host, "harbor-host", "http://harbor-harbor-core", "the host to use when contacting the Harbor API")
 	flags.StringVar(&c.HarborConfig.Username, "harbor-username", "", "The username to use to authenticate to Harbor")
 	flags.StringVar(&c.HarborConfig.Password, "harbor-password", "", "The password to use to authenticate to Harbor")
+	flags.BoolVar(&c.HarborConfig.Insecure, "harbor-insecure", false, "when set, the collector will not verify the TLS certificate for harbor")
 
 	err := flags.Parse(args)
 	if err != nil {
