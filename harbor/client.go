@@ -27,13 +27,16 @@ func NewClient(harborConfig *config.HarborConfig) Client {
 		harborConfig: harborConfig,
 		httpClient: &http.Client{
 			Timeout: time.Second * 10,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: harborConfig.Insecure,
-				},
-				Proxy: http.ProxyFromEnvironment,
-			},
 		},
+	}
+
+	if harborConfig.Insecure {
+		c.httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: harborConfig.Insecure,
+			},
+			Proxy: http.ProxyFromEnvironment,
+		}
 	}
 
 	if harborConfig.Username != "" && harborConfig.Password != "" {
