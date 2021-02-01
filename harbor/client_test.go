@@ -36,6 +36,17 @@ func TestClient(t *testing.T) {
 	expectedRepository := fake.LetterN(10)
 	expectedTag := fake.LetterN(10)
 
+	t.Run("insecure", func(t *testing.T) {
+		harborClientInsecure := NewClient(&config.HarborConfig{
+			Host:     expectedHost,
+			Insecure: true,
+		})
+
+		insecureTransport := harborClientInsecure.(*client).httpClient.Transport.(*http.Transport)
+
+		Expect(insecureTransport).ToNot(BeEquivalentTo(http.DefaultTransport))
+	})
+
 	t.Run("GetArtifacts", func(t *testing.T) {
 		expectedArtifacts := randomArtifacts()
 		expectedArtifactsResponseBytes, err := json.Marshal(&expectedArtifacts)
