@@ -1,6 +1,7 @@
 package harbor
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -26,6 +27,12 @@ func NewClient(harborConfig *config.HarborConfig) Client {
 		harborConfig: harborConfig,
 		httpClient: &http.Client{
 			Timeout: time.Second * 10,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: harborConfig.Insecure,
+				},
+				Proxy: http.ProxyFromEnvironment,
+			},
 		},
 	}
 

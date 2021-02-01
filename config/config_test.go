@@ -54,7 +54,7 @@ func TestConfig(t *testing.T) {
 		},
 		{
 			name:  "Harbor host",
-			flags: []string{"--harbor-host=foo"},
+			flags: []string{"--harbor-host=foo", "--harbor-username=bar", "--harbor-password=baz", "--harbor-insecure"},
 			expected: &Config{
 				Port:  8080,
 				Debug: false,
@@ -62,7 +62,10 @@ func TestConfig(t *testing.T) {
 					Host: "rode:50051",
 				},
 				HarborConfig: &HarborConfig{
-					Host: "foo",
+					Host:     "foo",
+					Username: "bar",
+					Password: "baz",
+					Insecure: true,
 				},
 			},
 		},
