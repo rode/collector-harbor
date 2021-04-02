@@ -1,6 +1,6 @@
 # collector-harbor
 
-[![codecov](https://codecov.io/gh/liatrio/rode-collector-harbor/branch/main/graph/badge.svg?token=YK62AO2TNX)](https://codecov.io/gh/liatrio/rode-collector-harbor)
+[![codecov](https://codecov.io/gh/rode/collector-harbor/branch/main/graph/badge.svg?token=kknOGd9xMa)](https://codecov.io/gh/rode/collector-harbor)
 
 ## Running Harbor locally
 Follow along [this blog](https://serverascode.com/2020/04/28/local-harbor-install.html) to setup Harbor locally using Docker Desktop and Helm.
