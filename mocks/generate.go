@@ -15,4 +15,4 @@
 package mocks
 
 //go:generate counterfeiter -o harbor_client.go github.com/rode/collector-harbor/harbor.Client
-//go:generate counterfeiter -o rode_client.go github.com/rode/rode/harbor.Client
+//go:generate counterfeiter -o rode_client.go github.com/rode/rode/proto/v1alpha1.RodeClient
