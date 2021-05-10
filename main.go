@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"github.com/rode/collector-harbor/harbor"
 	"google.golang.org/grpc/credentials"
@@ -67,6 +68,10 @@ func main() {
 	harborClient := harbor.NewClient(conf.HarborConfig)
 
 	l := listener.NewListener(logger.Named("listener"), rodeClient, harborClient)
+	err = l.Initialize()
+	if err != nil {
+		logger.Fatal("failed to register collector with rode", zap.Error(err))
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
@@ -78,7 +83,7 @@ func main() {
 
 	go func() {
 		err = server.ListenAndServe()
-		if err != nil {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatal("could not start http server...", zap.Error(err))
 		}
 	}()

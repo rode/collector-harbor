@@ -38,10 +38,12 @@ type listener struct {
 	rodeClient   pb.RodeClient
 	logger       *zap.Logger
 	harborClient harbor.Client
+	noteNames    map[common_go_proto.NoteKind]string
 }
 
 type Listener interface {
 	ProcessEvent(http.ResponseWriter, *http.Request)
+	Initialize() error
 }
 
 // NewListener instantiates a listener including a zap logger and the rodeclient connection
@@ -51,6 +53,48 @@ func NewListener(logger *zap.Logger, rodeClient pb.RodeClient, harborClient harb
 		logger:       logger,
 		harborClient: harborClient,
 	}
+}
+
+// Initialize registers the collector with Rode
+func (l *listener) Initialize() error {
+	log := l.logger.Named("Initialize")
+
+	registerCollectorRequest := &pb.RegisterCollectorRequest{
+		Id: "harbor",
+		Notes: []*grafeas_go_proto.Note{
+			// discovery note will be used to identify the type of scan
+			{
+				ShortDescription: "Harbor Vulnerability Scan",
+				LongDescription:  "Harbor Vulnerability Scan",
+				Kind:             common_go_proto.NoteKind_DISCOVERY,
+				Type: &grafeas_go_proto.Note_Discovery{
+					Discovery: &discovery_go_proto.Discovery{
+						AnalysisKind: common_go_proto.NoteKind_VULNERABILITY,
+					},
+				},
+			},
+			// unspecified note will be used as a placeholder for vulnerability occurrences until we come up with a better pattern here
+			{
+				ShortDescription: "TODO",
+				LongDescription:  "TODO",
+				Kind:             common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED,
+				Type:             &grafeas_go_proto.Note_Vulnerability{}, // type is required, so this seems like the best option
+			},
+		},
+	}
+	res, err := l.rodeClient.RegisterCollector(context.Background(), registerCollectorRequest)
+	if err != nil {
+		return err
+	}
+
+	log.Info("successfully registered with rode")
+
+	l.noteNames = make(map[common_go_proto.NoteKind]string)
+	for _, note := range res.Notes {
+		l.noteNames[note.Kind] = note.Name
+	}
+
+	return nil
 }
 
 // ProcessEvent handles incoming webhook events
@@ -69,11 +113,11 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	var occurrences []*grafeas_go_proto.Occurrence
 
 	if event.Type == harbor.PUSH_ARTIFACT || event.Type == harbor.SCANNING_FAILED {
-		occurrences = append(occurrences, createDiscoveryOccurrence(event))
+		occurrences = append(occurrences, l.createDiscoveryOccurrence(event))
 	}
 
 	if event.Type == harbor.SCANNING_COMPLETED {
-		occurrences = append(occurrences, createDiscoveryOccurrence(event))
+		occurrences = append(occurrences, l.createDiscoveryOccurrence(event))
 		report := event.Data.Resources[0].ScanOverview.Report
 		if report != nil && report.Summary.Total > 0 {
 			scanOccurrences, err := l.createVulnerabilityOccurrences(event)
@@ -102,7 +146,7 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func createDiscoveryOccurrence(event *harbor.Event) *grafeas_go_proto.Occurrence {
+func (l *listener) createDiscoveryOccurrence(event *harbor.Event) *grafeas_go_proto.Occurrence {
 	status := discovery_go_proto.Discovered_SCANNING
 	if event.Type == harbor.SCANNING_FAILED {
 		status = discovery_go_proto.Discovered_FINISHED_FAILED
@@ -114,7 +158,7 @@ func createDiscoveryOccurrence(event *harbor.Event) *grafeas_go_proto.Occurrence
 		Resource: &grafeas_go_proto.Resource{
 			Uri: resourceUri(event),
 		},
-		NoteName:   "projects/rode/notes/harbor",
+		NoteName:   l.noteNames[common_go_proto.NoteKind_DISCOVERY],
 		Kind:       common_go_proto.NoteKind_DISCOVERY,
 		CreateTime: eventTimestamp(event),
 		Details: &grafeas_go_proto.Occurrence_Discovered{
@@ -156,7 +200,7 @@ func (l *listener) createVulnerabilityOccurrences(event *harbor.Event) ([]*grafe
 			Resource: &grafeas_go_proto.Resource{
 				Uri: resourceUri(event),
 			},
-			NoteName:   "projects/rode/notes/harbor",
+			NoteName:   l.noteNames[common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED],
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
 			CreateTime: eventTimestamp(event),
 			Details: &grafeas_go_proto.Occurrence_Vulnerability{

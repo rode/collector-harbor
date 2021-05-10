@@ -40,16 +40,82 @@ var _ = Describe("listener", func() {
 	var (
 		harborClient *mocks.FakeClient
 		rodeClient   *mocks.FakeRodeClient
-		listener     Listener
+		l            *listener
+
+		expectedDiscoveryNoteName   string
+		expectedUnspecifiedNoteName string
 	)
 
 	BeforeEach(func() {
+		expectedDiscoveryNoteName = fake.LetterN(10)
+		expectedUnspecifiedNoteName = fake.LetterN(10)
+
 		harborClient = &mocks.FakeClient{}
 		rodeClient = &mocks.FakeRodeClient{}
 	})
 
 	JustBeforeEach(func() {
-		listener = NewListener(logger, rodeClient, harborClient)
+		l = &listener{
+			rodeClient:   rodeClient,
+			logger:       logger,
+			harborClient: harborClient,
+			noteNames: map[common_go_proto.NoteKind]string{
+				common_go_proto.NoteKind_DISCOVERY:             expectedDiscoveryNoteName,
+				common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED: expectedUnspecifiedNoteName,
+			},
+		}
+	})
+
+	Context("Initialize", func() {
+		var (
+			actualError error
+
+			expectedRegisterCollectorResponse *pb.RegisterCollectorResponse
+			expectedRegisterCollectorError    error
+		)
+
+		BeforeEach(func() {
+			expectedRegisterCollectorResponse = &pb.RegisterCollectorResponse{
+				Notes: map[string]*grafeas_go_proto.Note{
+					"harbor-discovery": {
+						Name: expectedDiscoveryNoteName,
+						Kind: common_go_proto.NoteKind_DISCOVERY,
+					},
+					"harbor-unspecified": {
+						Name: expectedUnspecifiedNoteName,
+						Kind: common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED,
+					},
+				},
+			}
+			expectedRegisterCollectorError = nil
+		})
+
+		JustBeforeEach(func() {
+			rodeClient.RegisterCollectorReturns(expectedRegisterCollectorResponse, expectedRegisterCollectorError)
+
+			actualError = NewListener(logger, rodeClient, harborClient).Initialize()
+		})
+
+		It("should register the collector and store the resulting note names", func() {
+			Expect(rodeClient.RegisterCollectorCallCount()).To(Equal(1))
+
+			Expect(l.noteNames[common_go_proto.NoteKind_DISCOVERY]).To(Equal(expectedDiscoveryNoteName))
+			Expect(l.noteNames[common_go_proto.NoteKind_NOTE_KIND_UNSPECIFIED]).To(Equal(expectedUnspecifiedNoteName))
+		})
+
+		It("should not return an error", func() {
+			Expect(actualError).ToNot(HaveOccurred())
+		})
+
+		When("registering the collector results in an error", func() {
+			BeforeEach(func() {
+				expectedRegisterCollectorError = errors.New("error registering collector")
+			})
+
+			It("should return an error", func() {
+				Expect(actualError).To(HaveOccurred())
+			})
+		})
 	})
 
 	Context("ProcessEvent", func() {
@@ -90,7 +156,7 @@ var _ = Describe("listener", func() {
 				payload = structToJsonBody(expectedHarborEvent)
 			}
 
-			listener.ProcessEvent(recorder, httptest.NewRequest("POST", "/webhook/event", payload))
+			l.ProcessEvent(recorder, httptest.NewRequest("POST", "/webhook/event", payload))
 		})
 
 		When("an invalid event is sent", func() {
@@ -134,7 +200,7 @@ var _ = Describe("listener", func() {
 
 				discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
 				Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-				Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
+				Expect(discoveryOccurrence.NoteName).To(Equal(expectedDiscoveryNoteName))
 				Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
 			})
 
@@ -180,7 +246,7 @@ var _ = Describe("listener", func() {
 
 				discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
 				Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-				Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
+				Expect(discoveryOccurrence.NoteName).To(Equal(expectedDiscoveryNoteName))
 				Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_FAILED))
 			})
 
@@ -237,7 +303,7 @@ var _ = Describe("listener", func() {
 
 				discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
 				Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-				Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
+				Expect(discoveryOccurrence.NoteName).To(Equal(expectedDiscoveryNoteName))
 				Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
 			})
 
@@ -293,16 +359,20 @@ var _ = Describe("listener", func() {
 
 					discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
 					Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-					Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
+					Expect(discoveryOccurrence.NoteName).To(Equal(expectedDiscoveryNoteName))
 					Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
 
 					for i := 0; i < len(expectedReport.Vulnerabilities); i++ {
 						occurrence := batchCreateOccurrencesRequest.Occurrences[i+1]
 
 						Expect(occurrence.Kind).To(Equal(common_go_proto.NoteKind_VULNERABILITY))
-						Expect(occurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
+						Expect(occurrence.NoteName).To(Equal(expectedUnspecifiedNoteName))
 						Expect(occurrence.Details.(*grafeas_go_proto.Occurrence_Vulnerability).Vulnerability.Type).To(Equal("docker"))
 					}
+				})
+
+				It("should respond with a 200", func() {
+					Expect(recorder.Code).To(Equal(http.StatusOK))
 				})
 
 				When("getting artifacts fails", func() {
