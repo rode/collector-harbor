@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rode/collector-harbor/config"
 	"github.com/rode/collector-harbor/harbor"
 	"go.uber.org/zap"
 
@@ -38,7 +37,6 @@ import (
 type listener struct {
 	rodeClient   pb.RodeClient
 	logger       *zap.Logger
-	config       *config.Config
 	harborClient harbor.Client
 }
 
@@ -47,11 +45,10 @@ type Listener interface {
 }
 
 // NewListener instantiates a listener including a zap logger and the rodeclient connection
-func NewListener(logger *zap.Logger, rodeClient pb.RodeClient, config *config.Config, harborClient harbor.Client) Listener {
+func NewListener(logger *zap.Logger, rodeClient pb.RodeClient, harborClient harbor.Client) Listener {
 	return &listener{
 		rodeClient:   rodeClient,
 		logger:       logger,
-		config:       config,
 		harborClient: harborClient,
 	}
 }

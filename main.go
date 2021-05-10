@@ -66,7 +66,7 @@ func main() {
 	rodeClient := pb.NewRodeClient(conn)
 	harborClient := harbor.NewClient(conf.HarborConfig)
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient, conf, harborClient)
+	l := listener.NewListener(logger.Named("listener"), rodeClient, harborClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)
