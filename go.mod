@@ -6,6 +6,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.0.0
 	github.com/jarcoal/httpmock v1.0.7
 	github.com/liatrio/rode-api v0.0.0-20201111165410-30d476656f6f
+	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.3
 	github.com/pkg/errors v0.9.1 // indirect
 	go.uber.org/zap v1.16.0
