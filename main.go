@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/liatrio/rode-api/proto/v1alpha1"
+	pb "github.com/rode/rode/proto/v1alpha1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -66,7 +66,7 @@ func main() {
 	rodeClient := pb.NewRodeClient(conn)
 	harborClient := harbor.NewClient(conf.HarborConfig)
 
-	l := listener.NewListener(logger.Named("listener"), rodeClient, conf, harborClient)
+	l := listener.NewListener(logger.Named("listener"), rodeClient, harborClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/webhook/event", l.ProcessEvent)

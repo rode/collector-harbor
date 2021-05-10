@@ -17,3 +17,5 @@ coverage.txt
 
 # Visual Studio Code
 .vscode
+
+.idea/

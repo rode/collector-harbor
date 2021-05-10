@@ -22,23 +22,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rode/collector-harbor/config"
 	"github.com/rode/collector-harbor/harbor"
 	"go.uber.org/zap"
 
-	pb "github.com/liatrio/rode-api/proto/v1alpha1"
-	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/common_go_proto"
-	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/discovery_go_proto"
-	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/grafeas_go_proto"
-	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/package_go_proto"
-	"github.com/liatrio/rode-api/protodeps/grafeas/proto/v1beta1/vulnerability_go_proto"
+	pb "github.com/rode/rode/proto/v1alpha1"
+	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/common_go_proto"
+	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/discovery_go_proto"
+	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/grafeas_go_proto"
+	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/package_go_proto"
+	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/vulnerability_go_proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type listener struct {
 	rodeClient   pb.RodeClient
 	logger       *zap.Logger
-	config       *config.Config
 	harborClient harbor.Client
 }
 
@@ -47,11 +45,10 @@ type Listener interface {
 }
 
 // NewListener instantiates a listener including a zap logger and the rodeclient connection
-func NewListener(logger *zap.Logger, rodeClient pb.RodeClient, config *config.Config, harborClient harbor.Client) Listener {
+func NewListener(logger *zap.Logger, rodeClient pb.RodeClient, harborClient harbor.Client) Listener {
 	return &listener{
 		rodeClient:   rodeClient,
 		logger:       logger,
-		config:       config,
 		harborClient: harborClient,
 	}
 }
