@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/liatrio/rode-api/proto/v1alpha1"
+	pb "github.com/rode/rode/proto/v1alpha1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
