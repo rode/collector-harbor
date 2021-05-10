@@ -1,6 +1,5 @@
 # syntax = docker/dockerfile:experimental
-# go 1.16 is required due to https://github.com/golang/go/commit/25a33daa2b7e7bda773705215113450923ae4815
-FROM golang:1.16beta1-alpine as builder
+FROM golang:1.16 as builder
 
 WORKDIR /workspace
 
