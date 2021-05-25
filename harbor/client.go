@@ -26,8 +26,10 @@ import (
 )
 
 type Client interface {
+	GetProjectByName(projectName string) (*Project, error)
 	GetArtifacts(project, repository string) ([]*Artifact, error)
-	GetArtifactReport(project, repository, tag string) (*Report, error)
+	GetArtifactReport(project, repository, artifactRef string) (*Report, error)
+	GetArtifactUrl(projectName, repository, artifactRef string) (string, error)
 }
 
 type client struct {
@@ -73,10 +75,10 @@ func (c *client) GetArtifacts(project, repository string) ([]*Artifact, error) {
 	return artifacts, nil
 }
 
-func (c *client) GetArtifactReport(project, repository, tag string) (*Report, error) {
+func (c *client) GetArtifactReport(project, repository, artifactRef string) (*Report, error) {
 	var scanOverview ScanOverview
 
-	uri := fmt.Sprintf("/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", project, repository, tag)
+	uri := fmt.Sprintf("/api/v2.0/projects/%s/repositories/%s/artifacts/%s/additions/vulnerabilities", project, repository, artifactRef)
 
 	err := c.get(uri, &scanOverview)
 	if err != nil {
@@ -84,6 +86,34 @@ func (c *client) GetArtifactReport(project, repository, tag string) (*Report, er
 	}
 
 	return scanOverview.Report, nil
+}
+
+func (c *client) GetProjectByName(name string) (*Project, error) {
+	var projects []*Project
+
+	uri := fmt.Sprintf("/api/v2.0/projects?name=%s", name)
+
+	err := c.get(uri, &projects)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, project := range projects {
+		if project.Name == name {
+			return project, nil
+		}
+	}
+
+	return nil, fmt.Errorf("project with name %s not found", name)
+}
+
+func (c *client) GetArtifactUrl(projectName, repository, artifactRef string) (string, error) {
+	project, err := c.GetProjectByName(projectName)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/harbor/projects/%d/repositories/%s/artifacts/%s", c.harborConfig.Host, project.Id, repository, artifactRef), nil
 }
 
 func (c *client) get(uri string, resource interface{}) error {

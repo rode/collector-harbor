@@ -23,6 +23,21 @@ type FakeClient struct {
 		result1 *harbor.Report
 		result2 error
 	}
+	GetArtifactUrlStub        func(string, string, string) (string, error)
+	getArtifactUrlMutex       sync.RWMutex
+	getArtifactUrlArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 string
+	}
+	getArtifactUrlReturns struct {
+		result1 string
+		result2 error
+	}
+	getArtifactUrlReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	GetArtifactsStub        func(string, string) ([]*harbor.Artifact, error)
 	getArtifactsMutex       sync.RWMutex
 	getArtifactsArgsForCall []struct {
@@ -35,6 +50,19 @@ type FakeClient struct {
 	}
 	getArtifactsReturnsOnCall map[int]struct {
 		result1 []*harbor.Artifact
+		result2 error
+	}
+	GetProjectByNameStub        func(string) (*harbor.Project, error)
+	getProjectByNameMutex       sync.RWMutex
+	getProjectByNameArgsForCall []struct {
+		arg1 string
+	}
+	getProjectByNameReturns struct {
+		result1 *harbor.Project
+		result2 error
+	}
+	getProjectByNameReturnsOnCall map[int]struct {
+		result1 *harbor.Project
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -107,6 +135,72 @@ func (fake *FakeClient) GetArtifactReportReturnsOnCall(i int, result1 *harbor.Re
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetArtifactUrl(arg1 string, arg2 string, arg3 string) (string, error) {
+	fake.getArtifactUrlMutex.Lock()
+	ret, specificReturn := fake.getArtifactUrlReturnsOnCall[len(fake.getArtifactUrlArgsForCall)]
+	fake.getArtifactUrlArgsForCall = append(fake.getArtifactUrlArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.GetArtifactUrlStub
+	fakeReturns := fake.getArtifactUrlReturns
+	fake.recordInvocation("GetArtifactUrl", []interface{}{arg1, arg2, arg3})
+	fake.getArtifactUrlMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetArtifactUrlCallCount() int {
+	fake.getArtifactUrlMutex.RLock()
+	defer fake.getArtifactUrlMutex.RUnlock()
+	return len(fake.getArtifactUrlArgsForCall)
+}
+
+func (fake *FakeClient) GetArtifactUrlCalls(stub func(string, string, string) (string, error)) {
+	fake.getArtifactUrlMutex.Lock()
+	defer fake.getArtifactUrlMutex.Unlock()
+	fake.GetArtifactUrlStub = stub
+}
+
+func (fake *FakeClient) GetArtifactUrlArgsForCall(i int) (string, string, string) {
+	fake.getArtifactUrlMutex.RLock()
+	defer fake.getArtifactUrlMutex.RUnlock()
+	argsForCall := fake.getArtifactUrlArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeClient) GetArtifactUrlReturns(result1 string, result2 error) {
+	fake.getArtifactUrlMutex.Lock()
+	defer fake.getArtifactUrlMutex.Unlock()
+	fake.GetArtifactUrlStub = nil
+	fake.getArtifactUrlReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetArtifactUrlReturnsOnCall(i int, result1 string, result2 error) {
+	fake.getArtifactUrlMutex.Lock()
+	defer fake.getArtifactUrlMutex.Unlock()
+	fake.GetArtifactUrlStub = nil
+	if fake.getArtifactUrlReturnsOnCall == nil {
+		fake.getArtifactUrlReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.getArtifactUrlReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) GetArtifacts(arg1 string, arg2 string) ([]*harbor.Artifact, error) {
 	fake.getArtifactsMutex.Lock()
 	ret, specificReturn := fake.getArtifactsReturnsOnCall[len(fake.getArtifactsArgsForCall)]
@@ -172,13 +266,81 @@ func (fake *FakeClient) GetArtifactsReturnsOnCall(i int, result1 []*harbor.Artif
 	}{result1, result2}
 }
 
+func (fake *FakeClient) GetProjectByName(arg1 string) (*harbor.Project, error) {
+	fake.getProjectByNameMutex.Lock()
+	ret, specificReturn := fake.getProjectByNameReturnsOnCall[len(fake.getProjectByNameArgsForCall)]
+	fake.getProjectByNameArgsForCall = append(fake.getProjectByNameArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetProjectByNameStub
+	fakeReturns := fake.getProjectByNameReturns
+	fake.recordInvocation("GetProjectByName", []interface{}{arg1})
+	fake.getProjectByNameMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeClient) GetProjectByNameCallCount() int {
+	fake.getProjectByNameMutex.RLock()
+	defer fake.getProjectByNameMutex.RUnlock()
+	return len(fake.getProjectByNameArgsForCall)
+}
+
+func (fake *FakeClient) GetProjectByNameCalls(stub func(string) (*harbor.Project, error)) {
+	fake.getProjectByNameMutex.Lock()
+	defer fake.getProjectByNameMutex.Unlock()
+	fake.GetProjectByNameStub = stub
+}
+
+func (fake *FakeClient) GetProjectByNameArgsForCall(i int) string {
+	fake.getProjectByNameMutex.RLock()
+	defer fake.getProjectByNameMutex.RUnlock()
+	argsForCall := fake.getProjectByNameArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeClient) GetProjectByNameReturns(result1 *harbor.Project, result2 error) {
+	fake.getProjectByNameMutex.Lock()
+	defer fake.getProjectByNameMutex.Unlock()
+	fake.GetProjectByNameStub = nil
+	fake.getProjectByNameReturns = struct {
+		result1 *harbor.Project
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeClient) GetProjectByNameReturnsOnCall(i int, result1 *harbor.Project, result2 error) {
+	fake.getProjectByNameMutex.Lock()
+	defer fake.getProjectByNameMutex.Unlock()
+	fake.GetProjectByNameStub = nil
+	if fake.getProjectByNameReturnsOnCall == nil {
+		fake.getProjectByNameReturnsOnCall = make(map[int]struct {
+			result1 *harbor.Project
+			result2 error
+		})
+	}
+	fake.getProjectByNameReturnsOnCall[i] = struct {
+		result1 *harbor.Project
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.getArtifactReportMutex.RLock()
 	defer fake.getArtifactReportMutex.RUnlock()
+	fake.getArtifactUrlMutex.RLock()
+	defer fake.getArtifactUrlMutex.RUnlock()
 	fake.getArtifactsMutex.RLock()
 	defer fake.getArtifactsMutex.RUnlock()
+	fake.getProjectByNameMutex.RLock()
+	defer fake.getProjectByNameMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
