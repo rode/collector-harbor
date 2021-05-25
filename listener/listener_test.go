@@ -231,6 +231,25 @@ var _ = Describe("listener", func() {
 				Expect(harborClient.GetArtifactsCallCount()).To(Equal(0))
 				Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
 			})
+
+			When("getting the artifact url fails", func() {
+				BeforeEach(func() {
+					expectedArtifactUrlError = errors.New("error getting artifact url")
+				})
+
+				It("should not make any requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+					Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				})
+
+				It("should not make any more requests to harbor", func() {
+					Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
 		})
 
 		When("a scan is completed", func() {
@@ -344,6 +363,25 @@ var _ = Describe("listener", func() {
 					It("should not create any occurrences", func() {
 						Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
 					})
+				})
+			})
+
+			When("getting the artifact url fails", func() {
+				BeforeEach(func() {
+					expectedArtifactUrlError = errors.New("error getting artifact url")
+				})
+
+				It("should not make any requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+					Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				})
+
+				It("should not make any more requests to harbor", func() {
+					Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
 				})
 			})
 		})
