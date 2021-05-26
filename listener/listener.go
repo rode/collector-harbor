@@ -63,89 +63,130 @@ func (l *listener) ProcessEvent(w http.ResponseWriter, request *http.Request) {
 		log.Error("error reading webhook event", zap.Error(err))
 		return
 	}
+
+	// only process events that occur when scanning is finished
+	if event.Type != harbor.SCANNING_FAILED && event.Type != harbor.SCANNING_COMPLETED {
+		w.WriteHeader(http.StatusOK)
+		log.Debug(fmt.Sprintf("not processing event with type %s", event.Type))
+		return
+	}
+
 	log = log.With(zap.Any("harbor event", event))
 	log.Debug("received event from harbor")
 
-	var occurrences []*grafeas_go_proto.Occurrence
+	for _, resource := range event.Data.Resources {
+		if resource.ScanOverview.Report == nil {
+			log.Error("expected event resource to contain a report")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-	if event.Type == harbor.PUSH_ARTIFACT || event.Type == harbor.SCANNING_FAILED {
-		occurrences = append(occurrences, createDiscoveryOccurrence(event))
-	}
-
-	if event.Type == harbor.SCANNING_COMPLETED {
-		occurrences = append(occurrences, createDiscoveryOccurrence(event))
-		report := event.Data.Resources[0].ScanOverview.Report
-		if report != nil && report.Summary.Total > 0 {
-			scanOccurrences, err := l.createVulnerabilityOccurrences(event)
-			if err != nil {
-				log.Error("error creating occurrences for vulnerabilities", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			occurrences = append(occurrences, scanOccurrences...)
+		err := l.processEventResource(event, resource)
+		if err != nil {
+			log.Error("error processing event resource", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (l *listener) processEventResource(event *harbor.Event, resource *harbor.Resource) error {
+	log := l.logger.Named("processEventResource").With(zap.Any("resource", resource))
+	log.Debug("processing event resource")
+
+	report := resource.ScanOverview.Report
+
+	// allow for one minute to process this event resource
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
+	log.Debug("creating note")
+	noteName, err := l.createNoteForReport(ctx, event, resource, report)
+	if err != nil {
+		return fmt.Errorf("error creating note for scan: %v", err)
+	}
+
+	var occurrences []*grafeas_go_proto.Occurrence
+
+	log.Debug("creating discovery occurrences")
+	discoveryOccurrences, err := createDiscoveryOccurrences(event, resource, report, noteName)
+	if err != nil {
+		return fmt.Errorf("error creating discovery occurrences: %v", err)
+	}
+
+	occurrences = append(occurrences, discoveryOccurrences...)
+
+	if event.Type == harbor.SCANNING_COMPLETED && report.Summary.Total > 0 {
+		log.Debug("creating vulnerability occurrences")
+		scanOccurrences, err := l.createVulnerabilityOccurrences(event, resource, noteName)
+		if err != nil {
+			return fmt.Errorf("error creating vulnerability occurrences: %v", err)
+		}
+
+		occurrences = append(occurrences, scanOccurrences...)
+	}
+
+	log.Debug("sending occurrences to rode")
 	response, err := l.rodeClient.BatchCreateOccurrences(ctx, &pb.BatchCreateOccurrencesRequest{
 		Occurrences: occurrences,
 	})
 	if err != nil {
-		log.Error("error sending occurrences to rode", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("error sending occurrences to rode: %v", err)
 	}
 
 	log.Debug("rode response payload", zap.Any("response", response))
-	w.WriteHeader(http.StatusOK)
+
+	return nil
 }
 
-func createDiscoveryOccurrence(event *harbor.Event) *grafeas_go_proto.Occurrence {
-	status := discovery_go_proto.Discovered_SCANNING
+func createDiscoveryOccurrences(event *harbor.Event, resource *harbor.Resource, report *harbor.Report, noteName string) ([]*grafeas_go_proto.Occurrence, error) {
+	status := discovery_go_proto.Discovered_FINISHED_SUCCESS
 	if event.Type == harbor.SCANNING_FAILED {
 		status = discovery_go_proto.Discovered_FINISHED_FAILED
-	} else if event.Type == harbor.SCANNING_COMPLETED {
-		status = discovery_go_proto.Discovered_FINISHED_SUCCESS
 	}
 
-	return &grafeas_go_proto.Occurrence{
-		Resource: &grafeas_go_proto.Resource{
-			Uri: resourceUri(event),
-		},
-		NoteName:   "projects/rode/notes/harbor",
-		Kind:       common_go_proto.NoteKind_DISCOVERY,
-		CreateTime: eventTimestamp(event),
-		Details: &grafeas_go_proto.Occurrence_Discovered{
-			Discovered: &discovery_go_proto.Details{
-				Discovered: &discovery_go_proto.Discovered{
-					ContinuousAnalysis: discovery_go_proto.Discovered_CONTINUOUS_ANALYSIS_UNSPECIFIED,
-					AnalysisStatus:     status,
-				}},
-		},
-	}
-}
-
-func (l *listener) createVulnerabilityOccurrences(event *harbor.Event) ([]*grafeas_go_proto.Occurrence, error) {
-	artifacts, err := l.harborClient.GetArtifacts(event.Data.Repository.Namespace, event.Data.Repository.Name)
+	startTime, endTime, err := reportTimestamps(report)
 	if err != nil {
 		return nil, err
 	}
 
-	var artifactTag string
-	for _, artifact := range artifacts {
-		if artifact.Digest == event.Data.Resources[0].Digest {
-			artifactTag = artifact.Tags[0].Name
-			break
-		}
-	}
+	return []*grafeas_go_proto.Occurrence{
+		{
+			Resource: &grafeas_go_proto.Resource{
+				Uri: resourceUri(resource),
+			},
+			NoteName:   noteName,
+			Kind:       common_go_proto.NoteKind_DISCOVERY,
+			CreateTime: startTime,
+			Details: &grafeas_go_proto.Occurrence_Discovered{
+				Discovered: &discovery_go_proto.Details{
+					Discovered: &discovery_go_proto.Discovered{
+						ContinuousAnalysis: discovery_go_proto.Discovered_CONTINUOUS_ANALYSIS_UNSPECIFIED,
+						AnalysisStatus:     discovery_go_proto.Discovered_SCANNING,
+					}},
+			},
+		},
+		{
+			Resource: &grafeas_go_proto.Resource{
+				Uri: resourceUri(resource),
+			},
+			NoteName:   noteName,
+			Kind:       common_go_proto.NoteKind_DISCOVERY,
+			CreateTime: endTime,
+			Details: &grafeas_go_proto.Occurrence_Discovered{
+				Discovered: &discovery_go_proto.Details{
+					Discovered: &discovery_go_proto.Discovered{
+						ContinuousAnalysis: discovery_go_proto.Discovered_CONTINUOUS_ANALYSIS_UNSPECIFIED,
+						AnalysisStatus:     status,
+					}},
+			},
+		},
+	}, nil
+}
 
-	if artifactTag == "" {
-		return nil, fmt.Errorf("unable to find tag for artifact with uri %s", resourceUri(event))
-	}
-
-	report, err := l.harborClient.GetArtifactReport(event.Data.Repository.Namespace, event.Data.Repository.Name, artifactTag)
+func (l *listener) createVulnerabilityOccurrences(event *harbor.Event, resource *harbor.Resource, noteName string) ([]*grafeas_go_proto.Occurrence, error) {
+	report, err := l.harborClient.GetArtifactReport(event.Data.Repository.Namespace, event.Data.Repository.Name, event.Data.Resources[0].Digest)
 	if err != nil {
 		return nil, err
 	}
@@ -154,9 +195,9 @@ func (l *listener) createVulnerabilityOccurrences(event *harbor.Event) ([]*grafe
 	for _, vulnerability := range report.Vulnerabilities {
 		occurrence := &grafeas_go_proto.Occurrence{
 			Resource: &grafeas_go_proto.Resource{
-				Uri: resourceUri(event),
+				Uri: resourceUri(resource),
 			},
-			NoteName:   "projects/rode/notes/harbor",
+			NoteName:   noteName,
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
 			CreateTime: eventTimestamp(event),
 			Details: &grafeas_go_proto.Occurrence_Vulnerability{
@@ -175,14 +216,60 @@ func (l *listener) createVulnerabilityOccurrences(event *harbor.Event) ([]*grafe
 	return occurrences, nil
 }
 
-func resourceUri(event *harbor.Event) string {
-	base := strings.Split(event.Data.Resources[0].ResourceUrl, ":")[0]
+func (l *listener) createNoteForReport(ctx context.Context, event *harbor.Event, resource *harbor.Resource, report *harbor.Report) (string, error) {
+	artifactUrl, err := l.harborClient.GetArtifactUrl(event.Data.Repository.Namespace, event.Data.Repository.Name, resource.Digest)
+	if err != nil {
+		return "", err
+	}
 
-	return fmt.Sprintf("%s@%s", base, event.Data.Resources[0].Digest)
+	note, err := l.rodeClient.CreateNote(ctx, &pb.CreateNoteRequest{
+		Note: &grafeas_go_proto.Note{
+			ShortDescription: "Harbor Vulnerability Scan",
+			LongDescription:  fmt.Sprintf("Harbor Vulnerability Scan by %s/%s (%s)", report.Scanner.Vendor, report.Scanner.Name, report.Scanner.Version),
+			Kind:             common_go_proto.NoteKind_DISCOVERY,
+			RelatedUrl: []*common_go_proto.RelatedUrl{
+				{
+					Label: "Artifact URL",
+					Url:   artifactUrl,
+				},
+			},
+			Type: &grafeas_go_proto.Note_Discovery{
+				Discovery: &discovery_go_proto.Discovery{
+					AnalysisKind: common_go_proto.NoteKind_VULNERABILITY,
+				},
+			},
+		},
+		NoteId: fmt.Sprintf("harbor-scan-%s", report.ReportId),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return note.Name, nil
+}
+
+func resourceUri(resource *harbor.Resource) string {
+	base := strings.Split(resource.ResourceUrl, ":")[0]
+
+	return fmt.Sprintf("%s@%s", base, resource.Digest)
 }
 
 func eventTimestamp(event *harbor.Event) *timestamppb.Timestamp {
 	return timestamppb.New(time.Unix(event.OccurAt, 0))
+}
+
+func reportTimestamps(report *harbor.Report) (*timestamppb.Timestamp, *timestamppb.Timestamp, error) {
+	start, err := time.Parse(time.RFC3339Nano, report.StartTime)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	end, err := time.Parse(time.RFC3339Nano, report.EndTime)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return timestamppb.New(start), timestamppb.New(end), nil
 }
 
 func relatedUrls(vuln *harbor.Vulnerability) []*common_go_proto.RelatedUrl {

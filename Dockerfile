@@ -3,8 +3,6 @@ FROM golang:1.16 as builder
 
 WORKDIR /workspace
 
-RUN apk add --no-cache gcc libc-dev
-
 # Copy the Go Modules manifests
 COPY go.mod go.sum /workspace/
 
@@ -20,9 +18,6 @@ COPY config config
 
 # Build
 RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o rode-collector-harbor
-
-# Test
-RUN go test -v -cover -tags unit ./...
 
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot as runner

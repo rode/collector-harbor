@@ -107,6 +107,11 @@ type Tag struct {
 	Name string `json:"name"`
 }
 
+type Project struct {
+	Id   int    `json:"project_id"`
+	Name string `json:"name"`
+}
+
 type WebhookEvent string
 
 const (

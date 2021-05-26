@@ -62,11 +62,20 @@ var _ = Describe("listener", func() {
 			expectedBatchCreateOccurrencesResponse *pb.BatchCreateOccurrencesResponse
 			expectedBatchCreateOccurrencesError    error
 
-			expectedArtifact          *harbor.Artifact
-			expectedGetArtifactsError error
+			expectedArtifactUrl      string
+			expectedArtifactUrlError error
 
 			expectedReport                 *harbor.Report
 			expectedGetArtifactReportError error
+
+			expectedNoteName        string
+			expectedNote            *grafeas_go_proto.Note
+			expectedCreateNoteError error
+
+			expectedReportId string
+
+			expectedRepository *harbor.Repository
+			expectedResource   *harbor.Resource
 		)
 
 		BeforeEach(func() {
@@ -74,13 +83,31 @@ var _ = Describe("listener", func() {
 			expectedUrl = fake.URL()
 			recorder = httptest.NewRecorder()
 
+			expectedArtifactUrl = fake.URL()
+			expectedArtifactUrlError = nil
+
+			expectedReportId = fake.LetterN(10)
+
+			expectedNoteName = fake.LetterN(10)
+			expectedNote = &grafeas_go_proto.Note{
+				Name: expectedNoteName,
+			}
+			expectedCreateNoteError = nil
+
 			expectedBatchCreateOccurrencesResponse = &pb.BatchCreateOccurrencesResponse{}
 			expectedBatchCreateOccurrencesError = nil
+
+			expectedRepository = &harbor.Repository{
+				Name:      fake.LetterN(10),
+				Namespace: fake.LetterN(10),
+			}
+			expectedResource = generateRandomResource(expectedUrl, expectedReportId)
 		})
 
 		JustBeforeEach(func() {
+			rodeClient.CreateNoteReturns(expectedNote, expectedCreateNoteError)
 			rodeClient.BatchCreateOccurrencesReturns(expectedBatchCreateOccurrencesResponse, expectedBatchCreateOccurrencesError)
-			harborClient.GetArtifactsReturns([]*harbor.Artifact{expectedArtifact}, expectedGetArtifactsError)
+			harborClient.GetArtifactUrlReturns(expectedArtifactUrl, expectedArtifactUrlError)
 			harborClient.GetArtifactReportReturns(expectedReport, expectedGetArtifactReportError)
 
 			var payload io.Reader
@@ -110,6 +137,11 @@ var _ = Describe("listener", func() {
 				Expect(harborClient.GetArtifactsCallCount()).To(Equal(0))
 				Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
 			})
+
+			It("should not make any request to rode", func() {
+				Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+			})
 		})
 
 		When("an image is pushed", func() {
@@ -119,42 +151,25 @@ var _ = Describe("listener", func() {
 					OccurAt: generateRandomTime(),
 					Data: &harbor.EventData{
 						Resources: []*harbor.Resource{
-							generateRandomResource(expectedUrl),
+							expectedResource,
 						},
+						Repository: expectedRepository,
 					},
 				}
-			})
-
-			It("should create a single scanning discovery occurrence", func() {
-				Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(1))
-
-				_, batchCreateOccurrencesRequest, _ := rodeClient.BatchCreateOccurrencesArgsForCall(0)
-
-				Expect(batchCreateOccurrencesRequest.Occurrences).To(HaveLen(1))
-
-				discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
-				Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-				Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
-				Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
 			})
 
 			It("should respond with a 200", func() {
 				Expect(recorder.Code).To(Equal(http.StatusOK))
 			})
 
-			It("should not make any requests to harbor", func() {
-				Expect(harborClient.GetArtifactsCallCount()).To(Equal(0))
-				Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
+			It("should not make any request to rode", func() {
+				Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
 			})
 
-			When("creating the occurrence fails", func() {
-				BeforeEach(func() {
-					expectedBatchCreateOccurrencesError = errors.New("failed creating occurrence")
-				})
-
-				It("should respond with an error", func() {
-					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
-				})
+			It("should not make any requests to harbor", func() {
+				Expect(harborClient.GetArtifactUrlCallCount()).To(Equal(0))
+				Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
 			})
 		})
 
@@ -165,23 +180,47 @@ var _ = Describe("listener", func() {
 					OccurAt: generateRandomTime(),
 					Data: &harbor.EventData{
 						Resources: []*harbor.Resource{
-							generateRandomResource(expectedUrl),
+							expectedResource,
 						},
+						Repository: expectedRepository,
 					},
 				}
 			})
 
-			It("should create a single scanning failed discovery occurrence", func() {
+			It("should create a note", func() {
+				// artifact url should be fetched to feed the note
+				Expect(harborClient.GetArtifactUrlCallCount()).To(Equal(1))
+				namespace, name, digest := harborClient.GetArtifactUrlArgsForCall(0)
+				Expect(namespace).To(Equal(expectedRepository.Namespace))
+				Expect(name).To(Equal(expectedRepository.Name))
+				Expect(digest).To(Equal(expectedResource.Digest))
+
+				Expect(rodeClient.CreateNoteCallCount()).To(Equal(1))
+
+				_, createNoteRequest, _ := rodeClient.CreateNoteArgsForCall(0)
+				Expect(createNoteRequest.NoteId).To(Equal(fmt.Sprintf("harbor-scan-%s", expectedReportId)))
+
+				Expect((createNoteRequest.Note.Type).(*grafeas_go_proto.Note_Discovery).Discovery.AnalysisKind).To(Equal(common_go_proto.NoteKind_VULNERABILITY))
+				Expect(createNoteRequest.Note.RelatedUrl[0].Url).To(Equal(expectedArtifactUrl))
+			})
+
+			It("should create discovery occurrences for the failed scan", func() {
 				Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(1))
 
 				_, batchCreateOccurrencesRequest, _ := rodeClient.BatchCreateOccurrencesArgsForCall(0)
 
-				Expect(batchCreateOccurrencesRequest.Occurrences).To(HaveLen(1))
+				Expect(batchCreateOccurrencesRequest.Occurrences).To(HaveLen(2))
 
-				discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
-				Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-				Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
-				Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_FAILED))
+				scanStartOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
+				scanEndOccurrence := batchCreateOccurrencesRequest.Occurrences[1]
+
+				Expect(scanStartOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
+				Expect(scanStartOccurrence.NoteName).To(Equal(expectedNoteName))
+				Expect(scanStartOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
+
+				Expect(scanEndOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
+				Expect(scanEndOccurrence.NoteName).To(Equal(expectedNoteName))
+				Expect(scanEndOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_FAILED))
 			})
 
 			It("should respond with a 200", func() {
@@ -192,30 +231,29 @@ var _ = Describe("listener", func() {
 				Expect(harborClient.GetArtifactsCallCount()).To(Equal(0))
 				Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
 			})
+
+			When("getting the artifact url fails", func() {
+				BeforeEach(func() {
+					expectedArtifactUrlError = errors.New("error getting artifact url")
+				})
+
+				It("should not make any requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+					Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				})
+
+				It("should not make any more requests to harbor", func() {
+					Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
 		})
 
 		When("a scan is completed", func() {
-			var (
-				expectedResource   *harbor.Resource
-				expectedRepository *harbor.Repository
-			)
-
 			BeforeEach(func() {
-				expectedResource = generateRandomResource(expectedUrl)
-
-				// happy path: no vulns found
-				expectedResource.ScanOverview = &harbor.ScanOverview{
-					Report: &harbor.Report{
-						Summary: &harbor.Summary{
-							Total: 0,
-						},
-					},
-				}
-				expectedRepository = &harbor.Repository{
-					Name:      fake.LetterN(10),
-					Namespace: fake.LetterN(10),
-				}
-
 				expectedHarborEvent = &harbor.Event{
 					Type:    harbor.SCANNING_COMPLETED,
 					OccurAt: generateRandomTime(),
@@ -228,17 +266,40 @@ var _ = Describe("listener", func() {
 				}
 			})
 
-			It("should create a single scanning success discovery occurrence", func() {
+			It("should create a note", func() {
+				// artifact url should be fetched to feed the note
+				Expect(harborClient.GetArtifactUrlCallCount()).To(Equal(1))
+				namespace, name, digest := harborClient.GetArtifactUrlArgsForCall(0)
+				Expect(namespace).To(Equal(expectedRepository.Namespace))
+				Expect(name).To(Equal(expectedRepository.Name))
+				Expect(digest).To(Equal(expectedResource.Digest))
+
+				Expect(rodeClient.CreateNoteCallCount()).To(Equal(1))
+
+				_, createNoteRequest, _ := rodeClient.CreateNoteArgsForCall(0)
+				Expect(createNoteRequest.NoteId).To(Equal(fmt.Sprintf("harbor-scan-%s", expectedReportId)))
+
+				Expect((createNoteRequest.Note.Type).(*grafeas_go_proto.Note_Discovery).Discovery.AnalysisKind).To(Equal(common_go_proto.NoteKind_VULNERABILITY))
+				Expect(createNoteRequest.Note.RelatedUrl[0].Url).To(Equal(expectedArtifactUrl))
+			})
+
+			It("should create discovery occurrences for the finished scan", func() {
 				Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(1))
 
 				_, batchCreateOccurrencesRequest, _ := rodeClient.BatchCreateOccurrencesArgsForCall(0)
 
-				Expect(batchCreateOccurrencesRequest.Occurrences).To(HaveLen(1))
+				Expect(batchCreateOccurrencesRequest.Occurrences).To(HaveLen(2))
 
-				discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
-				Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-				Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
-				Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
+				scanStartOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
+				scanEndOccurrence := batchCreateOccurrencesRequest.Occurrences[1]
+
+				Expect(scanStartOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
+				Expect(scanStartOccurrence.NoteName).To(Equal(expectedNoteName))
+				Expect(scanStartOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
+
+				Expect(scanEndOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
+				Expect(scanEndOccurrence.NoteName).To(Equal(expectedNoteName))
+				Expect(scanEndOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
 			})
 
 			It("should respond with a 200", func() {
@@ -251,94 +312,43 @@ var _ = Describe("listener", func() {
 			})
 
 			When("vulnerabilities are found", func() {
-				var (
-					expectedArtifactTag string
-				)
-
 				BeforeEach(func() {
-					expectedArtifactTag = fake.LetterN(10)
-					expectedArtifact = &harbor.Artifact{
-						Tags: []*harbor.Tag{
-							{
-								Name: expectedArtifactTag,
-							},
-						},
-						Digest: expectedResource.Digest,
-					}
-					expectedGetArtifactsError = nil
-
 					expectedNumberOfVulns := fake.Number(2, 5)
-					expectedResource.ScanOverview.Report.Summary.Total = expectedNumberOfVulns
 
+					expectedResource.ScanOverview.Report.Summary.Total = expectedNumberOfVulns
 					expectedReport = &harbor.Report{
+						Summary: &harbor.Summary{
+							Total: expectedNumberOfVulns,
+						},
 						Vulnerabilities: generateRandomVulnerabilities(expectedNumberOfVulns),
 					}
 				})
 
-				It("should fetch the artifacts from the event", func() {
-					Expect(harborClient.GetArtifactsCallCount()).To(Equal(1))
-
-					namespace, name := harborClient.GetArtifactsArgsForCall(0)
-
-					Expect(namespace).To(Equal(expectedRepository.Namespace))
-					Expect(name).To(Equal(expectedRepository.Name))
-				})
-
-				It("should create a discovery occurrence and a vulnerability occurrence for each vulnerability in the report", func() {
+				It("should create two discovery occurrences, and a vulnerability occurrence for each vulnerability in the report", func() {
 					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(1))
 
 					_, batchCreateOccurrencesRequest, _ := rodeClient.BatchCreateOccurrencesArgsForCall(0)
 
-					Expect(batchCreateOccurrencesRequest.Occurrences).To(HaveLen(len(expectedReport.Vulnerabilities) + 1))
+					Expect(batchCreateOccurrencesRequest.Occurrences).To(HaveLen(len(expectedReport.Vulnerabilities) + 2))
 
-					discoveryOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
-					Expect(discoveryOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
-					Expect(discoveryOccurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
-					Expect(discoveryOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
+					scanStartOccurrence := batchCreateOccurrencesRequest.Occurrences[0]
+					scanEndOccurrence := batchCreateOccurrencesRequest.Occurrences[1]
+
+					Expect(scanStartOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
+					Expect(scanStartOccurrence.NoteName).To(Equal(expectedNoteName))
+					Expect(scanStartOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
+
+					Expect(scanEndOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
+					Expect(scanEndOccurrence.NoteName).To(Equal(expectedNoteName))
+					Expect(scanEndOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
 
 					for i := 0; i < len(expectedReport.Vulnerabilities); i++ {
-						occurrence := batchCreateOccurrencesRequest.Occurrences[i+1]
+						occurrence := batchCreateOccurrencesRequest.Occurrences[i+2]
 
 						Expect(occurrence.Kind).To(Equal(common_go_proto.NoteKind_VULNERABILITY))
-						Expect(occurrence.NoteName).To(Equal("projects/rode/notes/harbor"))
+						Expect(occurrence.NoteName).To(Equal(expectedNoteName))
 						Expect(occurrence.Details.(*grafeas_go_proto.Occurrence_Vulnerability).Vulnerability.Type).To(Equal("docker"))
 					}
-				})
-
-				When("getting artifacts fails", func() {
-					BeforeEach(func() {
-						expectedGetArtifactsError = errors.New("failed getting artifacts")
-					})
-
-					It("should respond with an error", func() {
-						Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
-					})
-
-					It("should not attempt to fetch a report", func() {
-						Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
-					})
-
-					It("should not create any occurrences", func() {
-						Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
-					})
-				})
-
-				When("the artifact tag can't be found", func() {
-					BeforeEach(func() {
-						expectedArtifact.Digest = fake.LetterN(10)
-					})
-
-					It("should respond with an error", func() {
-						Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
-					})
-
-					It("should not attempt to fetch a report", func() {
-						Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
-					})
-
-					It("should not create any occurrences", func() {
-						Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
-					})
 				})
 
 				When("getting the artifact report fails", func() {
@@ -353,6 +363,96 @@ var _ = Describe("listener", func() {
 					It("should not create any occurrences", func() {
 						Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
 					})
+				})
+			})
+
+			When("getting the artifact url fails", func() {
+				BeforeEach(func() {
+					expectedArtifactUrlError = errors.New("error getting artifact url")
+				})
+
+				It("should not make any requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+					Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				})
+
+				It("should not make any more requests to harbor", func() {
+					Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("creating the note fails", func() {
+				BeforeEach(func() {
+					expectedCreateNoteError = errors.New("error creating note")
+				})
+
+				It("should not make any more requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("the report start time is in an invalid format", func() {
+				BeforeEach(func() {
+					expectedResource.ScanOverview.Report.StartTime = fake.LetterN(10)
+				})
+
+				It("should not make any more requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("the report end time is in an invalid format", func() {
+				BeforeEach(func() {
+					expectedResource.ScanOverview.Report.EndTime = fake.LetterN(10)
+				})
+
+				It("should not make any more requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("the report is missing", func() {
+				BeforeEach(func() {
+					expectedResource.ScanOverview.Report = nil
+				})
+
+				It("should not make any requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+					Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				})
+
+				It("should not make any requests to harbor", func() {
+					Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("creating the occurrences fails", func() {
+				BeforeEach(func() {
+					expectedBatchCreateOccurrencesError = errors.New("error creating occurrences")
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
 				})
 			})
 		})
@@ -370,11 +470,26 @@ func generateRandomTime() int64 {
 	return time.Now().Unix() + int64(fake.Number(-1000, 1000))
 }
 
-func generateRandomResource(expectedUrl string) *harbor.Resource {
+func generateRandomResource(expectedUrl, expectedReportId string) *harbor.Resource {
 	randomDigest := sha256.Sum256([]byte(fake.LetterN(10)))
 	randomTag := fake.LetterN(7)
 
 	return &harbor.Resource{
+		ScanOverview: &harbor.ScanOverview{
+			Report: &harbor.Report{
+				Summary: &harbor.Summary{
+					Total: 0,
+				},
+				ReportId: expectedReportId,
+				Scanner: &harbor.Scanner{
+					Name:    fake.LetterN(10),
+					Vendor:  fake.LetterN(10),
+					Version: fake.LetterN(10),
+				},
+				StartTime: time.Now().Add(time.Duration(fake.Int64())).Format(time.RFC3339Nano),
+				EndTime:   time.Now().Add(time.Duration(fake.Int64() * -1)).Format(time.RFC3339Nano),
+			},
+		},
 		Digest:      fmt.Sprintf("sha256:%x", randomDigest),
 		Tag:         randomTag,
 		ResourceUrl: fmt.Sprintf("%s:%s", expectedUrl, randomTag),
