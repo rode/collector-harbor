@@ -384,6 +384,77 @@ var _ = Describe("listener", func() {
 					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
 				})
 			})
+
+			When("creating the note fails", func() {
+				BeforeEach(func() {
+					expectedCreateNoteError = errors.New("error creating note")
+				})
+
+				It("should not make any more requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("the report start time is in an invalid format", func() {
+				BeforeEach(func() {
+					expectedResource.ScanOverview.Report.StartTime = fake.LetterN(10)
+				})
+
+				It("should not make any more requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("the report end time is in an invalid format", func() {
+				BeforeEach(func() {
+					expectedResource.ScanOverview.Report.EndTime = fake.LetterN(10)
+				})
+
+				It("should not make any more requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("the report is missing", func() {
+				BeforeEach(func() {
+					expectedResource.ScanOverview.Report = nil
+				})
+
+				It("should not make any requests to rode", func() {
+					Expect(rodeClient.BatchCreateOccurrencesCallCount()).To(Equal(0))
+					Expect(rodeClient.CreateNoteCallCount()).To(Equal(0))
+				})
+
+				It("should not make any requests to harbor", func() {
+					Expect(harborClient.GetArtifactReportCallCount()).To(Equal(0))
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
+
+			When("creating the occurrences fails", func() {
+				BeforeEach(func() {
+					expectedBatchCreateOccurrencesError = errors.New("error creating occurrences")
+				})
+
+				It("should respond with an error", func() {
+					Expect(recorder.Code).To(Equal(http.StatusInternalServerError))
+				})
+			})
 		})
 	})
 })
