@@ -16,6 +16,7 @@ package config
 
 import (
 	"flag"
+	"github.com/peterbourgon/ff/v3"
 	"github.com/rode/rode/common"
 )
 
@@ -49,7 +50,7 @@ func Build(name string, args []string) (*Config, error) {
 	flags.StringVar(&c.HarborConfig.Password, "harbor-password", "", "The password to use to authenticate to Harbor")
 	flags.BoolVar(&c.HarborConfig.Insecure, "harbor-insecure", false, "when set, the collector will not verify the TLS certificate for harbor")
 
-	err := flags.Parse(args)
+	err := ff.Parse(flags, args)
 	if err != nil {
 		return nil, err
 	}
