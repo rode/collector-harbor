@@ -25,6 +25,9 @@ import (
 	"time"
 )
 
+//go:generate counterfeiter -generate
+
+//counterfeiter:generate . Client
 type Client interface {
 	GetProjectByName(projectName string) (*Project, error)
 	GetArtifacts(project, repository string) ([]*Artifact, error)
