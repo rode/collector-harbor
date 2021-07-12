@@ -42,11 +42,11 @@ type FakeRodeClient struct {
 		result1 *grafeas_go_proto.Note
 		result2 error
 	}
-	CreatePolicyStub        func(context.Context, *v1alpha1.PolicyEntity, ...grpc.CallOption) (*v1alpha1.Policy, error)
+	CreatePolicyStub        func(context.Context, *v1alpha1.Policy, ...grpc.CallOption) (*v1alpha1.Policy, error)
 	createPolicyMutex       sync.RWMutex
 	createPolicyArgsForCall []struct {
 		arg1 context.Context
-		arg2 *v1alpha1.PolicyEntity
+		arg2 *v1alpha1.Policy
 		arg3 []grpc.CallOption
 	}
 	createPolicyReturns struct {
@@ -55,6 +55,36 @@ type FakeRodeClient struct {
 	}
 	createPolicyReturnsOnCall map[int]struct {
 		result1 *v1alpha1.Policy
+		result2 error
+	}
+	CreatePolicyAssignmentStub        func(context.Context, *v1alpha1.PolicyAssignment, ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error)
+	createPolicyAssignmentMutex       sync.RWMutex
+	createPolicyAssignmentArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyAssignment
+		arg3 []grpc.CallOption
+	}
+	createPolicyAssignmentReturns struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}
+	createPolicyAssignmentReturnsOnCall map[int]struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}
+	CreatePolicyGroupStub        func(context.Context, *v1alpha1.PolicyGroup, ...grpc.CallOption) (*v1alpha1.PolicyGroup, error)
+	createPolicyGroupMutex       sync.RWMutex
+	createPolicyGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyGroup
+		arg3 []grpc.CallOption
+	}
+	createPolicyGroupReturns struct {
+		result1 *v1alpha1.PolicyGroup
+		result2 error
+	}
+	createPolicyGroupReturnsOnCall map[int]struct {
+		result1 *v1alpha1.PolicyGroup
 		result2 error
 	}
 	DeletePolicyStub        func(context.Context, *v1alpha1.DeletePolicyRequest, ...grpc.CallOption) (*emptypb.Empty, error)
@@ -69,6 +99,36 @@ type FakeRodeClient struct {
 		result2 error
 	}
 	deletePolicyReturnsOnCall map[int]struct {
+		result1 *emptypb.Empty
+		result2 error
+	}
+	DeletePolicyAssignmentStub        func(context.Context, *v1alpha1.DeletePolicyAssignmentRequest, ...grpc.CallOption) (*emptypb.Empty, error)
+	deletePolicyAssignmentMutex       sync.RWMutex
+	deletePolicyAssignmentArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.DeletePolicyAssignmentRequest
+		arg3 []grpc.CallOption
+	}
+	deletePolicyAssignmentReturns struct {
+		result1 *emptypb.Empty
+		result2 error
+	}
+	deletePolicyAssignmentReturnsOnCall map[int]struct {
+		result1 *emptypb.Empty
+		result2 error
+	}
+	DeletePolicyGroupStub        func(context.Context, *v1alpha1.DeletePolicyGroupRequest, ...grpc.CallOption) (*emptypb.Empty, error)
+	deletePolicyGroupMutex       sync.RWMutex
+	deletePolicyGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.DeletePolicyGroupRequest
+		arg3 []grpc.CallOption
+	}
+	deletePolicyGroupReturns struct {
+		result1 *emptypb.Empty
+		result2 error
+	}
+	deletePolicyGroupReturnsOnCall map[int]struct {
 		result1 *emptypb.Empty
 		result2 error
 	}
@@ -87,6 +147,21 @@ type FakeRodeClient struct {
 		result1 *v1alpha1.EvaluatePolicyResponse
 		result2 error
 	}
+	EvaluateResourceStub        func(context.Context, *v1alpha1.ResourceEvaluationRequest, ...grpc.CallOption) (*v1alpha1.ResourceEvaluationResult, error)
+	evaluateResourceMutex       sync.RWMutex
+	evaluateResourceArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ResourceEvaluationRequest
+		arg3 []grpc.CallOption
+	}
+	evaluateResourceReturns struct {
+		result1 *v1alpha1.ResourceEvaluationResult
+		result2 error
+	}
+	evaluateResourceReturnsOnCall map[int]struct {
+		result1 *v1alpha1.ResourceEvaluationResult
+		result2 error
+	}
 	GetPolicyStub        func(context.Context, *v1alpha1.GetPolicyRequest, ...grpc.CallOption) (*v1alpha1.Policy, error)
 	getPolicyMutex       sync.RWMutex
 	getPolicyArgsForCall []struct {
@@ -102,34 +177,49 @@ type FakeRodeClient struct {
 		result1 *v1alpha1.Policy
 		result2 error
 	}
-	ListGenericResourceVersionsStub        func(context.Context, *v1alpha1.ListGenericResourceVersionsRequest, ...grpc.CallOption) (*v1alpha1.ListGenericResourceVersionsResponse, error)
-	listGenericResourceVersionsMutex       sync.RWMutex
-	listGenericResourceVersionsArgsForCall []struct {
+	GetPolicyAssignmentStub        func(context.Context, *v1alpha1.GetPolicyAssignmentRequest, ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error)
+	getPolicyAssignmentMutex       sync.RWMutex
+	getPolicyAssignmentArgsForCall []struct {
 		arg1 context.Context
-		arg2 *v1alpha1.ListGenericResourceVersionsRequest
+		arg2 *v1alpha1.GetPolicyAssignmentRequest
 		arg3 []grpc.CallOption
 	}
-	listGenericResourceVersionsReturns struct {
-		result1 *v1alpha1.ListGenericResourceVersionsResponse
+	getPolicyAssignmentReturns struct {
+		result1 *v1alpha1.PolicyAssignment
 		result2 error
 	}
-	listGenericResourceVersionsReturnsOnCall map[int]struct {
-		result1 *v1alpha1.ListGenericResourceVersionsResponse
+	getPolicyAssignmentReturnsOnCall map[int]struct {
+		result1 *v1alpha1.PolicyAssignment
 		result2 error
 	}
-	ListGenericResourcesStub        func(context.Context, *v1alpha1.ListGenericResourcesRequest, ...grpc.CallOption) (*v1alpha1.ListGenericResourcesResponse, error)
-	listGenericResourcesMutex       sync.RWMutex
-	listGenericResourcesArgsForCall []struct {
+	GetPolicyGroupStub        func(context.Context, *v1alpha1.GetPolicyGroupRequest, ...grpc.CallOption) (*v1alpha1.PolicyGroup, error)
+	getPolicyGroupMutex       sync.RWMutex
+	getPolicyGroupArgsForCall []struct {
 		arg1 context.Context
-		arg2 *v1alpha1.ListGenericResourcesRequest
+		arg2 *v1alpha1.GetPolicyGroupRequest
 		arg3 []grpc.CallOption
 	}
-	listGenericResourcesReturns struct {
-		result1 *v1alpha1.ListGenericResourcesResponse
+	getPolicyGroupReturns struct {
+		result1 *v1alpha1.PolicyGroup
 		result2 error
 	}
-	listGenericResourcesReturnsOnCall map[int]struct {
-		result1 *v1alpha1.ListGenericResourcesResponse
+	getPolicyGroupReturnsOnCall map[int]struct {
+		result1 *v1alpha1.PolicyGroup
+		result2 error
+	}
+	GetResourceEvaluationStub        func(context.Context, *v1alpha1.GetResourceEvaluationRequest, ...grpc.CallOption) (*v1alpha1.ResourceEvaluationResult, error)
+	getResourceEvaluationMutex       sync.RWMutex
+	getResourceEvaluationArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.GetResourceEvaluationRequest
+		arg3 []grpc.CallOption
+	}
+	getResourceEvaluationReturns struct {
+		result1 *v1alpha1.ResourceEvaluationResult
+		result2 error
+	}
+	getResourceEvaluationReturnsOnCall map[int]struct {
+		result1 *v1alpha1.ResourceEvaluationResult
 		result2 error
 	}
 	ListOccurrencesStub        func(context.Context, *v1alpha1.ListOccurrencesRequest, ...grpc.CallOption) (*v1alpha1.ListOccurrencesResponse, error)
@@ -160,6 +250,81 @@ type FakeRodeClient struct {
 	}
 	listPoliciesReturnsOnCall map[int]struct {
 		result1 *v1alpha1.ListPoliciesResponse
+		result2 error
+	}
+	ListPolicyAssignmentsStub        func(context.Context, *v1alpha1.ListPolicyAssignmentsRequest, ...grpc.CallOption) (*v1alpha1.ListPolicyAssignmentsResponse, error)
+	listPolicyAssignmentsMutex       sync.RWMutex
+	listPolicyAssignmentsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListPolicyAssignmentsRequest
+		arg3 []grpc.CallOption
+	}
+	listPolicyAssignmentsReturns struct {
+		result1 *v1alpha1.ListPolicyAssignmentsResponse
+		result2 error
+	}
+	listPolicyAssignmentsReturnsOnCall map[int]struct {
+		result1 *v1alpha1.ListPolicyAssignmentsResponse
+		result2 error
+	}
+	ListPolicyGroupsStub        func(context.Context, *v1alpha1.ListPolicyGroupsRequest, ...grpc.CallOption) (*v1alpha1.ListPolicyGroupsResponse, error)
+	listPolicyGroupsMutex       sync.RWMutex
+	listPolicyGroupsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListPolicyGroupsRequest
+		arg3 []grpc.CallOption
+	}
+	listPolicyGroupsReturns struct {
+		result1 *v1alpha1.ListPolicyGroupsResponse
+		result2 error
+	}
+	listPolicyGroupsReturnsOnCall map[int]struct {
+		result1 *v1alpha1.ListPolicyGroupsResponse
+		result2 error
+	}
+	ListPolicyVersionsStub        func(context.Context, *v1alpha1.ListPolicyVersionsRequest, ...grpc.CallOption) (*v1alpha1.ListPolicyVersionsResponse, error)
+	listPolicyVersionsMutex       sync.RWMutex
+	listPolicyVersionsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListPolicyVersionsRequest
+		arg3 []grpc.CallOption
+	}
+	listPolicyVersionsReturns struct {
+		result1 *v1alpha1.ListPolicyVersionsResponse
+		result2 error
+	}
+	listPolicyVersionsReturnsOnCall map[int]struct {
+		result1 *v1alpha1.ListPolicyVersionsResponse
+		result2 error
+	}
+	ListResourceEvaluationsStub        func(context.Context, *v1alpha1.ListResourceEvaluationsRequest, ...grpc.CallOption) (*v1alpha1.ListResourceEvaluationsResponse, error)
+	listResourceEvaluationsMutex       sync.RWMutex
+	listResourceEvaluationsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListResourceEvaluationsRequest
+		arg3 []grpc.CallOption
+	}
+	listResourceEvaluationsReturns struct {
+		result1 *v1alpha1.ListResourceEvaluationsResponse
+		result2 error
+	}
+	listResourceEvaluationsReturnsOnCall map[int]struct {
+		result1 *v1alpha1.ListResourceEvaluationsResponse
+		result2 error
+	}
+	ListResourceVersionsStub        func(context.Context, *v1alpha1.ListResourceVersionsRequest, ...grpc.CallOption) (*v1alpha1.ListResourceVersionsResponse, error)
+	listResourceVersionsMutex       sync.RWMutex
+	listResourceVersionsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListResourceVersionsRequest
+		arg3 []grpc.CallOption
+	}
+	listResourceVersionsReturns struct {
+		result1 *v1alpha1.ListResourceVersionsResponse
+		result2 error
+	}
+	listResourceVersionsReturnsOnCall map[int]struct {
+		result1 *v1alpha1.ListResourceVersionsResponse
 		result2 error
 	}
 	ListResourcesStub        func(context.Context, *v1alpha1.ListResourcesRequest, ...grpc.CallOption) (*v1alpha1.ListResourcesResponse, error)
@@ -235,6 +400,36 @@ type FakeRodeClient struct {
 	}
 	updatePolicyReturnsOnCall map[int]struct {
 		result1 *v1alpha1.Policy
+		result2 error
+	}
+	UpdatePolicyAssignmentStub        func(context.Context, *v1alpha1.PolicyAssignment, ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error)
+	updatePolicyAssignmentMutex       sync.RWMutex
+	updatePolicyAssignmentArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyAssignment
+		arg3 []grpc.CallOption
+	}
+	updatePolicyAssignmentReturns struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}
+	updatePolicyAssignmentReturnsOnCall map[int]struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}
+	UpdatePolicyGroupStub        func(context.Context, *v1alpha1.PolicyGroup, ...grpc.CallOption) (*v1alpha1.PolicyGroup, error)
+	updatePolicyGroupMutex       sync.RWMutex
+	updatePolicyGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyGroup
+		arg3 []grpc.CallOption
+	}
+	updatePolicyGroupReturns struct {
+		result1 *v1alpha1.PolicyGroup
+		result2 error
+	}
+	updatePolicyGroupReturnsOnCall map[int]struct {
+		result1 *v1alpha1.PolicyGroup
 		result2 error
 	}
 	ValidatePolicyStub        func(context.Context, *v1alpha1.ValidatePolicyRequest, ...grpc.CallOption) (*v1alpha1.ValidatePolicyResponse, error)
@@ -388,12 +583,12 @@ func (fake *FakeRodeClient) CreateNoteReturnsOnCall(i int, result1 *grafeas_go_p
 	}{result1, result2}
 }
 
-func (fake *FakeRodeClient) CreatePolicy(arg1 context.Context, arg2 *v1alpha1.PolicyEntity, arg3 ...grpc.CallOption) (*v1alpha1.Policy, error) {
+func (fake *FakeRodeClient) CreatePolicy(arg1 context.Context, arg2 *v1alpha1.Policy, arg3 ...grpc.CallOption) (*v1alpha1.Policy, error) {
 	fake.createPolicyMutex.Lock()
 	ret, specificReturn := fake.createPolicyReturnsOnCall[len(fake.createPolicyArgsForCall)]
 	fake.createPolicyArgsForCall = append(fake.createPolicyArgsForCall, struct {
 		arg1 context.Context
-		arg2 *v1alpha1.PolicyEntity
+		arg2 *v1alpha1.Policy
 		arg3 []grpc.CallOption
 	}{arg1, arg2, arg3})
 	stub := fake.CreatePolicyStub
@@ -415,13 +610,13 @@ func (fake *FakeRodeClient) CreatePolicyCallCount() int {
 	return len(fake.createPolicyArgsForCall)
 }
 
-func (fake *FakeRodeClient) CreatePolicyCalls(stub func(context.Context, *v1alpha1.PolicyEntity, ...grpc.CallOption) (*v1alpha1.Policy, error)) {
+func (fake *FakeRodeClient) CreatePolicyCalls(stub func(context.Context, *v1alpha1.Policy, ...grpc.CallOption) (*v1alpha1.Policy, error)) {
 	fake.createPolicyMutex.Lock()
 	defer fake.createPolicyMutex.Unlock()
 	fake.CreatePolicyStub = stub
 }
 
-func (fake *FakeRodeClient) CreatePolicyArgsForCall(i int) (context.Context, *v1alpha1.PolicyEntity, []grpc.CallOption) {
+func (fake *FakeRodeClient) CreatePolicyArgsForCall(i int) (context.Context, *v1alpha1.Policy, []grpc.CallOption) {
 	fake.createPolicyMutex.RLock()
 	defer fake.createPolicyMutex.RUnlock()
 	argsForCall := fake.createPolicyArgsForCall[i]
@@ -450,6 +645,138 @@ func (fake *FakeRodeClient) CreatePolicyReturnsOnCall(i int, result1 *v1alpha1.P
 	}
 	fake.createPolicyReturnsOnCall[i] = struct {
 		result1 *v1alpha1.Policy
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) CreatePolicyAssignment(arg1 context.Context, arg2 *v1alpha1.PolicyAssignment, arg3 ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error) {
+	fake.createPolicyAssignmentMutex.Lock()
+	ret, specificReturn := fake.createPolicyAssignmentReturnsOnCall[len(fake.createPolicyAssignmentArgsForCall)]
+	fake.createPolicyAssignmentArgsForCall = append(fake.createPolicyAssignmentArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyAssignment
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.CreatePolicyAssignmentStub
+	fakeReturns := fake.createPolicyAssignmentReturns
+	fake.recordInvocation("CreatePolicyAssignment", []interface{}{arg1, arg2, arg3})
+	fake.createPolicyAssignmentMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) CreatePolicyAssignmentCallCount() int {
+	fake.createPolicyAssignmentMutex.RLock()
+	defer fake.createPolicyAssignmentMutex.RUnlock()
+	return len(fake.createPolicyAssignmentArgsForCall)
+}
+
+func (fake *FakeRodeClient) CreatePolicyAssignmentCalls(stub func(context.Context, *v1alpha1.PolicyAssignment, ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error)) {
+	fake.createPolicyAssignmentMutex.Lock()
+	defer fake.createPolicyAssignmentMutex.Unlock()
+	fake.CreatePolicyAssignmentStub = stub
+}
+
+func (fake *FakeRodeClient) CreatePolicyAssignmentArgsForCall(i int) (context.Context, *v1alpha1.PolicyAssignment, []grpc.CallOption) {
+	fake.createPolicyAssignmentMutex.RLock()
+	defer fake.createPolicyAssignmentMutex.RUnlock()
+	argsForCall := fake.createPolicyAssignmentArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) CreatePolicyAssignmentReturns(result1 *v1alpha1.PolicyAssignment, result2 error) {
+	fake.createPolicyAssignmentMutex.Lock()
+	defer fake.createPolicyAssignmentMutex.Unlock()
+	fake.CreatePolicyAssignmentStub = nil
+	fake.createPolicyAssignmentReturns = struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) CreatePolicyAssignmentReturnsOnCall(i int, result1 *v1alpha1.PolicyAssignment, result2 error) {
+	fake.createPolicyAssignmentMutex.Lock()
+	defer fake.createPolicyAssignmentMutex.Unlock()
+	fake.CreatePolicyAssignmentStub = nil
+	if fake.createPolicyAssignmentReturnsOnCall == nil {
+		fake.createPolicyAssignmentReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.PolicyAssignment
+			result2 error
+		})
+	}
+	fake.createPolicyAssignmentReturnsOnCall[i] = struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) CreatePolicyGroup(arg1 context.Context, arg2 *v1alpha1.PolicyGroup, arg3 ...grpc.CallOption) (*v1alpha1.PolicyGroup, error) {
+	fake.createPolicyGroupMutex.Lock()
+	ret, specificReturn := fake.createPolicyGroupReturnsOnCall[len(fake.createPolicyGroupArgsForCall)]
+	fake.createPolicyGroupArgsForCall = append(fake.createPolicyGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyGroup
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.CreatePolicyGroupStub
+	fakeReturns := fake.createPolicyGroupReturns
+	fake.recordInvocation("CreatePolicyGroup", []interface{}{arg1, arg2, arg3})
+	fake.createPolicyGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) CreatePolicyGroupCallCount() int {
+	fake.createPolicyGroupMutex.RLock()
+	defer fake.createPolicyGroupMutex.RUnlock()
+	return len(fake.createPolicyGroupArgsForCall)
+}
+
+func (fake *FakeRodeClient) CreatePolicyGroupCalls(stub func(context.Context, *v1alpha1.PolicyGroup, ...grpc.CallOption) (*v1alpha1.PolicyGroup, error)) {
+	fake.createPolicyGroupMutex.Lock()
+	defer fake.createPolicyGroupMutex.Unlock()
+	fake.CreatePolicyGroupStub = stub
+}
+
+func (fake *FakeRodeClient) CreatePolicyGroupArgsForCall(i int) (context.Context, *v1alpha1.PolicyGroup, []grpc.CallOption) {
+	fake.createPolicyGroupMutex.RLock()
+	defer fake.createPolicyGroupMutex.RUnlock()
+	argsForCall := fake.createPolicyGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) CreatePolicyGroupReturns(result1 *v1alpha1.PolicyGroup, result2 error) {
+	fake.createPolicyGroupMutex.Lock()
+	defer fake.createPolicyGroupMutex.Unlock()
+	fake.CreatePolicyGroupStub = nil
+	fake.createPolicyGroupReturns = struct {
+		result1 *v1alpha1.PolicyGroup
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) CreatePolicyGroupReturnsOnCall(i int, result1 *v1alpha1.PolicyGroup, result2 error) {
+	fake.createPolicyGroupMutex.Lock()
+	defer fake.createPolicyGroupMutex.Unlock()
+	fake.CreatePolicyGroupStub = nil
+	if fake.createPolicyGroupReturnsOnCall == nil {
+		fake.createPolicyGroupReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.PolicyGroup
+			result2 error
+		})
+	}
+	fake.createPolicyGroupReturnsOnCall[i] = struct {
+		result1 *v1alpha1.PolicyGroup
 		result2 error
 	}{result1, result2}
 }
@@ -515,6 +842,138 @@ func (fake *FakeRodeClient) DeletePolicyReturnsOnCall(i int, result1 *emptypb.Em
 		})
 	}
 	fake.deletePolicyReturnsOnCall[i] = struct {
+		result1 *emptypb.Empty
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) DeletePolicyAssignment(arg1 context.Context, arg2 *v1alpha1.DeletePolicyAssignmentRequest, arg3 ...grpc.CallOption) (*emptypb.Empty, error) {
+	fake.deletePolicyAssignmentMutex.Lock()
+	ret, specificReturn := fake.deletePolicyAssignmentReturnsOnCall[len(fake.deletePolicyAssignmentArgsForCall)]
+	fake.deletePolicyAssignmentArgsForCall = append(fake.deletePolicyAssignmentArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.DeletePolicyAssignmentRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.DeletePolicyAssignmentStub
+	fakeReturns := fake.deletePolicyAssignmentReturns
+	fake.recordInvocation("DeletePolicyAssignment", []interface{}{arg1, arg2, arg3})
+	fake.deletePolicyAssignmentMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) DeletePolicyAssignmentCallCount() int {
+	fake.deletePolicyAssignmentMutex.RLock()
+	defer fake.deletePolicyAssignmentMutex.RUnlock()
+	return len(fake.deletePolicyAssignmentArgsForCall)
+}
+
+func (fake *FakeRodeClient) DeletePolicyAssignmentCalls(stub func(context.Context, *v1alpha1.DeletePolicyAssignmentRequest, ...grpc.CallOption) (*emptypb.Empty, error)) {
+	fake.deletePolicyAssignmentMutex.Lock()
+	defer fake.deletePolicyAssignmentMutex.Unlock()
+	fake.DeletePolicyAssignmentStub = stub
+}
+
+func (fake *FakeRodeClient) DeletePolicyAssignmentArgsForCall(i int) (context.Context, *v1alpha1.DeletePolicyAssignmentRequest, []grpc.CallOption) {
+	fake.deletePolicyAssignmentMutex.RLock()
+	defer fake.deletePolicyAssignmentMutex.RUnlock()
+	argsForCall := fake.deletePolicyAssignmentArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) DeletePolicyAssignmentReturns(result1 *emptypb.Empty, result2 error) {
+	fake.deletePolicyAssignmentMutex.Lock()
+	defer fake.deletePolicyAssignmentMutex.Unlock()
+	fake.DeletePolicyAssignmentStub = nil
+	fake.deletePolicyAssignmentReturns = struct {
+		result1 *emptypb.Empty
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) DeletePolicyAssignmentReturnsOnCall(i int, result1 *emptypb.Empty, result2 error) {
+	fake.deletePolicyAssignmentMutex.Lock()
+	defer fake.deletePolicyAssignmentMutex.Unlock()
+	fake.DeletePolicyAssignmentStub = nil
+	if fake.deletePolicyAssignmentReturnsOnCall == nil {
+		fake.deletePolicyAssignmentReturnsOnCall = make(map[int]struct {
+			result1 *emptypb.Empty
+			result2 error
+		})
+	}
+	fake.deletePolicyAssignmentReturnsOnCall[i] = struct {
+		result1 *emptypb.Empty
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) DeletePolicyGroup(arg1 context.Context, arg2 *v1alpha1.DeletePolicyGroupRequest, arg3 ...grpc.CallOption) (*emptypb.Empty, error) {
+	fake.deletePolicyGroupMutex.Lock()
+	ret, specificReturn := fake.deletePolicyGroupReturnsOnCall[len(fake.deletePolicyGroupArgsForCall)]
+	fake.deletePolicyGroupArgsForCall = append(fake.deletePolicyGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.DeletePolicyGroupRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.DeletePolicyGroupStub
+	fakeReturns := fake.deletePolicyGroupReturns
+	fake.recordInvocation("DeletePolicyGroup", []interface{}{arg1, arg2, arg3})
+	fake.deletePolicyGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) DeletePolicyGroupCallCount() int {
+	fake.deletePolicyGroupMutex.RLock()
+	defer fake.deletePolicyGroupMutex.RUnlock()
+	return len(fake.deletePolicyGroupArgsForCall)
+}
+
+func (fake *FakeRodeClient) DeletePolicyGroupCalls(stub func(context.Context, *v1alpha1.DeletePolicyGroupRequest, ...grpc.CallOption) (*emptypb.Empty, error)) {
+	fake.deletePolicyGroupMutex.Lock()
+	defer fake.deletePolicyGroupMutex.Unlock()
+	fake.DeletePolicyGroupStub = stub
+}
+
+func (fake *FakeRodeClient) DeletePolicyGroupArgsForCall(i int) (context.Context, *v1alpha1.DeletePolicyGroupRequest, []grpc.CallOption) {
+	fake.deletePolicyGroupMutex.RLock()
+	defer fake.deletePolicyGroupMutex.RUnlock()
+	argsForCall := fake.deletePolicyGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) DeletePolicyGroupReturns(result1 *emptypb.Empty, result2 error) {
+	fake.deletePolicyGroupMutex.Lock()
+	defer fake.deletePolicyGroupMutex.Unlock()
+	fake.DeletePolicyGroupStub = nil
+	fake.deletePolicyGroupReturns = struct {
+		result1 *emptypb.Empty
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) DeletePolicyGroupReturnsOnCall(i int, result1 *emptypb.Empty, result2 error) {
+	fake.deletePolicyGroupMutex.Lock()
+	defer fake.deletePolicyGroupMutex.Unlock()
+	fake.DeletePolicyGroupStub = nil
+	if fake.deletePolicyGroupReturnsOnCall == nil {
+		fake.deletePolicyGroupReturnsOnCall = make(map[int]struct {
+			result1 *emptypb.Empty
+			result2 error
+		})
+	}
+	fake.deletePolicyGroupReturnsOnCall[i] = struct {
 		result1 *emptypb.Empty
 		result2 error
 	}{result1, result2}
@@ -586,6 +1045,72 @@ func (fake *FakeRodeClient) EvaluatePolicyReturnsOnCall(i int, result1 *v1alpha1
 	}{result1, result2}
 }
 
+func (fake *FakeRodeClient) EvaluateResource(arg1 context.Context, arg2 *v1alpha1.ResourceEvaluationRequest, arg3 ...grpc.CallOption) (*v1alpha1.ResourceEvaluationResult, error) {
+	fake.evaluateResourceMutex.Lock()
+	ret, specificReturn := fake.evaluateResourceReturnsOnCall[len(fake.evaluateResourceArgsForCall)]
+	fake.evaluateResourceArgsForCall = append(fake.evaluateResourceArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ResourceEvaluationRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.EvaluateResourceStub
+	fakeReturns := fake.evaluateResourceReturns
+	fake.recordInvocation("EvaluateResource", []interface{}{arg1, arg2, arg3})
+	fake.evaluateResourceMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) EvaluateResourceCallCount() int {
+	fake.evaluateResourceMutex.RLock()
+	defer fake.evaluateResourceMutex.RUnlock()
+	return len(fake.evaluateResourceArgsForCall)
+}
+
+func (fake *FakeRodeClient) EvaluateResourceCalls(stub func(context.Context, *v1alpha1.ResourceEvaluationRequest, ...grpc.CallOption) (*v1alpha1.ResourceEvaluationResult, error)) {
+	fake.evaluateResourceMutex.Lock()
+	defer fake.evaluateResourceMutex.Unlock()
+	fake.EvaluateResourceStub = stub
+}
+
+func (fake *FakeRodeClient) EvaluateResourceArgsForCall(i int) (context.Context, *v1alpha1.ResourceEvaluationRequest, []grpc.CallOption) {
+	fake.evaluateResourceMutex.RLock()
+	defer fake.evaluateResourceMutex.RUnlock()
+	argsForCall := fake.evaluateResourceArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) EvaluateResourceReturns(result1 *v1alpha1.ResourceEvaluationResult, result2 error) {
+	fake.evaluateResourceMutex.Lock()
+	defer fake.evaluateResourceMutex.Unlock()
+	fake.EvaluateResourceStub = nil
+	fake.evaluateResourceReturns = struct {
+		result1 *v1alpha1.ResourceEvaluationResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) EvaluateResourceReturnsOnCall(i int, result1 *v1alpha1.ResourceEvaluationResult, result2 error) {
+	fake.evaluateResourceMutex.Lock()
+	defer fake.evaluateResourceMutex.Unlock()
+	fake.EvaluateResourceStub = nil
+	if fake.evaluateResourceReturnsOnCall == nil {
+		fake.evaluateResourceReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.ResourceEvaluationResult
+			result2 error
+		})
+	}
+	fake.evaluateResourceReturnsOnCall[i] = struct {
+		result1 *v1alpha1.ResourceEvaluationResult
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeRodeClient) GetPolicy(arg1 context.Context, arg2 *v1alpha1.GetPolicyRequest, arg3 ...grpc.CallOption) (*v1alpha1.Policy, error) {
 	fake.getPolicyMutex.Lock()
 	ret, specificReturn := fake.getPolicyReturnsOnCall[len(fake.getPolicyArgsForCall)]
@@ -652,18 +1177,18 @@ func (fake *FakeRodeClient) GetPolicyReturnsOnCall(i int, result1 *v1alpha1.Poli
 	}{result1, result2}
 }
 
-func (fake *FakeRodeClient) ListGenericResourceVersions(arg1 context.Context, arg2 *v1alpha1.ListGenericResourceVersionsRequest, arg3 ...grpc.CallOption) (*v1alpha1.ListGenericResourceVersionsResponse, error) {
-	fake.listGenericResourceVersionsMutex.Lock()
-	ret, specificReturn := fake.listGenericResourceVersionsReturnsOnCall[len(fake.listGenericResourceVersionsArgsForCall)]
-	fake.listGenericResourceVersionsArgsForCall = append(fake.listGenericResourceVersionsArgsForCall, struct {
+func (fake *FakeRodeClient) GetPolicyAssignment(arg1 context.Context, arg2 *v1alpha1.GetPolicyAssignmentRequest, arg3 ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error) {
+	fake.getPolicyAssignmentMutex.Lock()
+	ret, specificReturn := fake.getPolicyAssignmentReturnsOnCall[len(fake.getPolicyAssignmentArgsForCall)]
+	fake.getPolicyAssignmentArgsForCall = append(fake.getPolicyAssignmentArgsForCall, struct {
 		arg1 context.Context
-		arg2 *v1alpha1.ListGenericResourceVersionsRequest
+		arg2 *v1alpha1.GetPolicyAssignmentRequest
 		arg3 []grpc.CallOption
 	}{arg1, arg2, arg3})
-	stub := fake.ListGenericResourceVersionsStub
-	fakeReturns := fake.listGenericResourceVersionsReturns
-	fake.recordInvocation("ListGenericResourceVersions", []interface{}{arg1, arg2, arg3})
-	fake.listGenericResourceVersionsMutex.Unlock()
+	stub := fake.GetPolicyAssignmentStub
+	fakeReturns := fake.getPolicyAssignmentReturns
+	fake.recordInvocation("GetPolicyAssignment", []interface{}{arg1, arg2, arg3})
+	fake.getPolicyAssignmentMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3...)
 	}
@@ -673,63 +1198,63 @@ func (fake *FakeRodeClient) ListGenericResourceVersions(arg1 context.Context, ar
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeRodeClient) ListGenericResourceVersionsCallCount() int {
-	fake.listGenericResourceVersionsMutex.RLock()
-	defer fake.listGenericResourceVersionsMutex.RUnlock()
-	return len(fake.listGenericResourceVersionsArgsForCall)
+func (fake *FakeRodeClient) GetPolicyAssignmentCallCount() int {
+	fake.getPolicyAssignmentMutex.RLock()
+	defer fake.getPolicyAssignmentMutex.RUnlock()
+	return len(fake.getPolicyAssignmentArgsForCall)
 }
 
-func (fake *FakeRodeClient) ListGenericResourceVersionsCalls(stub func(context.Context, *v1alpha1.ListGenericResourceVersionsRequest, ...grpc.CallOption) (*v1alpha1.ListGenericResourceVersionsResponse, error)) {
-	fake.listGenericResourceVersionsMutex.Lock()
-	defer fake.listGenericResourceVersionsMutex.Unlock()
-	fake.ListGenericResourceVersionsStub = stub
+func (fake *FakeRodeClient) GetPolicyAssignmentCalls(stub func(context.Context, *v1alpha1.GetPolicyAssignmentRequest, ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error)) {
+	fake.getPolicyAssignmentMutex.Lock()
+	defer fake.getPolicyAssignmentMutex.Unlock()
+	fake.GetPolicyAssignmentStub = stub
 }
 
-func (fake *FakeRodeClient) ListGenericResourceVersionsArgsForCall(i int) (context.Context, *v1alpha1.ListGenericResourceVersionsRequest, []grpc.CallOption) {
-	fake.listGenericResourceVersionsMutex.RLock()
-	defer fake.listGenericResourceVersionsMutex.RUnlock()
-	argsForCall := fake.listGenericResourceVersionsArgsForCall[i]
+func (fake *FakeRodeClient) GetPolicyAssignmentArgsForCall(i int) (context.Context, *v1alpha1.GetPolicyAssignmentRequest, []grpc.CallOption) {
+	fake.getPolicyAssignmentMutex.RLock()
+	defer fake.getPolicyAssignmentMutex.RUnlock()
+	argsForCall := fake.getPolicyAssignmentArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeRodeClient) ListGenericResourceVersionsReturns(result1 *v1alpha1.ListGenericResourceVersionsResponse, result2 error) {
-	fake.listGenericResourceVersionsMutex.Lock()
-	defer fake.listGenericResourceVersionsMutex.Unlock()
-	fake.ListGenericResourceVersionsStub = nil
-	fake.listGenericResourceVersionsReturns = struct {
-		result1 *v1alpha1.ListGenericResourceVersionsResponse
+func (fake *FakeRodeClient) GetPolicyAssignmentReturns(result1 *v1alpha1.PolicyAssignment, result2 error) {
+	fake.getPolicyAssignmentMutex.Lock()
+	defer fake.getPolicyAssignmentMutex.Unlock()
+	fake.GetPolicyAssignmentStub = nil
+	fake.getPolicyAssignmentReturns = struct {
+		result1 *v1alpha1.PolicyAssignment
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRodeClient) ListGenericResourceVersionsReturnsOnCall(i int, result1 *v1alpha1.ListGenericResourceVersionsResponse, result2 error) {
-	fake.listGenericResourceVersionsMutex.Lock()
-	defer fake.listGenericResourceVersionsMutex.Unlock()
-	fake.ListGenericResourceVersionsStub = nil
-	if fake.listGenericResourceVersionsReturnsOnCall == nil {
-		fake.listGenericResourceVersionsReturnsOnCall = make(map[int]struct {
-			result1 *v1alpha1.ListGenericResourceVersionsResponse
+func (fake *FakeRodeClient) GetPolicyAssignmentReturnsOnCall(i int, result1 *v1alpha1.PolicyAssignment, result2 error) {
+	fake.getPolicyAssignmentMutex.Lock()
+	defer fake.getPolicyAssignmentMutex.Unlock()
+	fake.GetPolicyAssignmentStub = nil
+	if fake.getPolicyAssignmentReturnsOnCall == nil {
+		fake.getPolicyAssignmentReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.PolicyAssignment
 			result2 error
 		})
 	}
-	fake.listGenericResourceVersionsReturnsOnCall[i] = struct {
-		result1 *v1alpha1.ListGenericResourceVersionsResponse
+	fake.getPolicyAssignmentReturnsOnCall[i] = struct {
+		result1 *v1alpha1.PolicyAssignment
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRodeClient) ListGenericResources(arg1 context.Context, arg2 *v1alpha1.ListGenericResourcesRequest, arg3 ...grpc.CallOption) (*v1alpha1.ListGenericResourcesResponse, error) {
-	fake.listGenericResourcesMutex.Lock()
-	ret, specificReturn := fake.listGenericResourcesReturnsOnCall[len(fake.listGenericResourcesArgsForCall)]
-	fake.listGenericResourcesArgsForCall = append(fake.listGenericResourcesArgsForCall, struct {
+func (fake *FakeRodeClient) GetPolicyGroup(arg1 context.Context, arg2 *v1alpha1.GetPolicyGroupRequest, arg3 ...grpc.CallOption) (*v1alpha1.PolicyGroup, error) {
+	fake.getPolicyGroupMutex.Lock()
+	ret, specificReturn := fake.getPolicyGroupReturnsOnCall[len(fake.getPolicyGroupArgsForCall)]
+	fake.getPolicyGroupArgsForCall = append(fake.getPolicyGroupArgsForCall, struct {
 		arg1 context.Context
-		arg2 *v1alpha1.ListGenericResourcesRequest
+		arg2 *v1alpha1.GetPolicyGroupRequest
 		arg3 []grpc.CallOption
 	}{arg1, arg2, arg3})
-	stub := fake.ListGenericResourcesStub
-	fakeReturns := fake.listGenericResourcesReturns
-	fake.recordInvocation("ListGenericResources", []interface{}{arg1, arg2, arg3})
-	fake.listGenericResourcesMutex.Unlock()
+	stub := fake.GetPolicyGroupStub
+	fakeReturns := fake.getPolicyGroupReturns
+	fake.recordInvocation("GetPolicyGroup", []interface{}{arg1, arg2, arg3})
+	fake.getPolicyGroupMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2, arg3...)
 	}
@@ -739,47 +1264,113 @@ func (fake *FakeRodeClient) ListGenericResources(arg1 context.Context, arg2 *v1a
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeRodeClient) ListGenericResourcesCallCount() int {
-	fake.listGenericResourcesMutex.RLock()
-	defer fake.listGenericResourcesMutex.RUnlock()
-	return len(fake.listGenericResourcesArgsForCall)
+func (fake *FakeRodeClient) GetPolicyGroupCallCount() int {
+	fake.getPolicyGroupMutex.RLock()
+	defer fake.getPolicyGroupMutex.RUnlock()
+	return len(fake.getPolicyGroupArgsForCall)
 }
 
-func (fake *FakeRodeClient) ListGenericResourcesCalls(stub func(context.Context, *v1alpha1.ListGenericResourcesRequest, ...grpc.CallOption) (*v1alpha1.ListGenericResourcesResponse, error)) {
-	fake.listGenericResourcesMutex.Lock()
-	defer fake.listGenericResourcesMutex.Unlock()
-	fake.ListGenericResourcesStub = stub
+func (fake *FakeRodeClient) GetPolicyGroupCalls(stub func(context.Context, *v1alpha1.GetPolicyGroupRequest, ...grpc.CallOption) (*v1alpha1.PolicyGroup, error)) {
+	fake.getPolicyGroupMutex.Lock()
+	defer fake.getPolicyGroupMutex.Unlock()
+	fake.GetPolicyGroupStub = stub
 }
 
-func (fake *FakeRodeClient) ListGenericResourcesArgsForCall(i int) (context.Context, *v1alpha1.ListGenericResourcesRequest, []grpc.CallOption) {
-	fake.listGenericResourcesMutex.RLock()
-	defer fake.listGenericResourcesMutex.RUnlock()
-	argsForCall := fake.listGenericResourcesArgsForCall[i]
+func (fake *FakeRodeClient) GetPolicyGroupArgsForCall(i int) (context.Context, *v1alpha1.GetPolicyGroupRequest, []grpc.CallOption) {
+	fake.getPolicyGroupMutex.RLock()
+	defer fake.getPolicyGroupMutex.RUnlock()
+	argsForCall := fake.getPolicyGroupArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeRodeClient) ListGenericResourcesReturns(result1 *v1alpha1.ListGenericResourcesResponse, result2 error) {
-	fake.listGenericResourcesMutex.Lock()
-	defer fake.listGenericResourcesMutex.Unlock()
-	fake.ListGenericResourcesStub = nil
-	fake.listGenericResourcesReturns = struct {
-		result1 *v1alpha1.ListGenericResourcesResponse
+func (fake *FakeRodeClient) GetPolicyGroupReturns(result1 *v1alpha1.PolicyGroup, result2 error) {
+	fake.getPolicyGroupMutex.Lock()
+	defer fake.getPolicyGroupMutex.Unlock()
+	fake.GetPolicyGroupStub = nil
+	fake.getPolicyGroupReturns = struct {
+		result1 *v1alpha1.PolicyGroup
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeRodeClient) ListGenericResourcesReturnsOnCall(i int, result1 *v1alpha1.ListGenericResourcesResponse, result2 error) {
-	fake.listGenericResourcesMutex.Lock()
-	defer fake.listGenericResourcesMutex.Unlock()
-	fake.ListGenericResourcesStub = nil
-	if fake.listGenericResourcesReturnsOnCall == nil {
-		fake.listGenericResourcesReturnsOnCall = make(map[int]struct {
-			result1 *v1alpha1.ListGenericResourcesResponse
+func (fake *FakeRodeClient) GetPolicyGroupReturnsOnCall(i int, result1 *v1alpha1.PolicyGroup, result2 error) {
+	fake.getPolicyGroupMutex.Lock()
+	defer fake.getPolicyGroupMutex.Unlock()
+	fake.GetPolicyGroupStub = nil
+	if fake.getPolicyGroupReturnsOnCall == nil {
+		fake.getPolicyGroupReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.PolicyGroup
 			result2 error
 		})
 	}
-	fake.listGenericResourcesReturnsOnCall[i] = struct {
-		result1 *v1alpha1.ListGenericResourcesResponse
+	fake.getPolicyGroupReturnsOnCall[i] = struct {
+		result1 *v1alpha1.PolicyGroup
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) GetResourceEvaluation(arg1 context.Context, arg2 *v1alpha1.GetResourceEvaluationRequest, arg3 ...grpc.CallOption) (*v1alpha1.ResourceEvaluationResult, error) {
+	fake.getResourceEvaluationMutex.Lock()
+	ret, specificReturn := fake.getResourceEvaluationReturnsOnCall[len(fake.getResourceEvaluationArgsForCall)]
+	fake.getResourceEvaluationArgsForCall = append(fake.getResourceEvaluationArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.GetResourceEvaluationRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.GetResourceEvaluationStub
+	fakeReturns := fake.getResourceEvaluationReturns
+	fake.recordInvocation("GetResourceEvaluation", []interface{}{arg1, arg2, arg3})
+	fake.getResourceEvaluationMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) GetResourceEvaluationCallCount() int {
+	fake.getResourceEvaluationMutex.RLock()
+	defer fake.getResourceEvaluationMutex.RUnlock()
+	return len(fake.getResourceEvaluationArgsForCall)
+}
+
+func (fake *FakeRodeClient) GetResourceEvaluationCalls(stub func(context.Context, *v1alpha1.GetResourceEvaluationRequest, ...grpc.CallOption) (*v1alpha1.ResourceEvaluationResult, error)) {
+	fake.getResourceEvaluationMutex.Lock()
+	defer fake.getResourceEvaluationMutex.Unlock()
+	fake.GetResourceEvaluationStub = stub
+}
+
+func (fake *FakeRodeClient) GetResourceEvaluationArgsForCall(i int) (context.Context, *v1alpha1.GetResourceEvaluationRequest, []grpc.CallOption) {
+	fake.getResourceEvaluationMutex.RLock()
+	defer fake.getResourceEvaluationMutex.RUnlock()
+	argsForCall := fake.getResourceEvaluationArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) GetResourceEvaluationReturns(result1 *v1alpha1.ResourceEvaluationResult, result2 error) {
+	fake.getResourceEvaluationMutex.Lock()
+	defer fake.getResourceEvaluationMutex.Unlock()
+	fake.GetResourceEvaluationStub = nil
+	fake.getResourceEvaluationReturns = struct {
+		result1 *v1alpha1.ResourceEvaluationResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) GetResourceEvaluationReturnsOnCall(i int, result1 *v1alpha1.ResourceEvaluationResult, result2 error) {
+	fake.getResourceEvaluationMutex.Lock()
+	defer fake.getResourceEvaluationMutex.Unlock()
+	fake.GetResourceEvaluationStub = nil
+	if fake.getResourceEvaluationReturnsOnCall == nil {
+		fake.getResourceEvaluationReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.ResourceEvaluationResult
+			result2 error
+		})
+	}
+	fake.getResourceEvaluationReturnsOnCall[i] = struct {
+		result1 *v1alpha1.ResourceEvaluationResult
 		result2 error
 	}{result1, result2}
 }
@@ -912,6 +1503,336 @@ func (fake *FakeRodeClient) ListPoliciesReturnsOnCall(i int, result1 *v1alpha1.L
 	}
 	fake.listPoliciesReturnsOnCall[i] = struct {
 		result1 *v1alpha1.ListPoliciesResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListPolicyAssignments(arg1 context.Context, arg2 *v1alpha1.ListPolicyAssignmentsRequest, arg3 ...grpc.CallOption) (*v1alpha1.ListPolicyAssignmentsResponse, error) {
+	fake.listPolicyAssignmentsMutex.Lock()
+	ret, specificReturn := fake.listPolicyAssignmentsReturnsOnCall[len(fake.listPolicyAssignmentsArgsForCall)]
+	fake.listPolicyAssignmentsArgsForCall = append(fake.listPolicyAssignmentsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListPolicyAssignmentsRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.ListPolicyAssignmentsStub
+	fakeReturns := fake.listPolicyAssignmentsReturns
+	fake.recordInvocation("ListPolicyAssignments", []interface{}{arg1, arg2, arg3})
+	fake.listPolicyAssignmentsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) ListPolicyAssignmentsCallCount() int {
+	fake.listPolicyAssignmentsMutex.RLock()
+	defer fake.listPolicyAssignmentsMutex.RUnlock()
+	return len(fake.listPolicyAssignmentsArgsForCall)
+}
+
+func (fake *FakeRodeClient) ListPolicyAssignmentsCalls(stub func(context.Context, *v1alpha1.ListPolicyAssignmentsRequest, ...grpc.CallOption) (*v1alpha1.ListPolicyAssignmentsResponse, error)) {
+	fake.listPolicyAssignmentsMutex.Lock()
+	defer fake.listPolicyAssignmentsMutex.Unlock()
+	fake.ListPolicyAssignmentsStub = stub
+}
+
+func (fake *FakeRodeClient) ListPolicyAssignmentsArgsForCall(i int) (context.Context, *v1alpha1.ListPolicyAssignmentsRequest, []grpc.CallOption) {
+	fake.listPolicyAssignmentsMutex.RLock()
+	defer fake.listPolicyAssignmentsMutex.RUnlock()
+	argsForCall := fake.listPolicyAssignmentsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) ListPolicyAssignmentsReturns(result1 *v1alpha1.ListPolicyAssignmentsResponse, result2 error) {
+	fake.listPolicyAssignmentsMutex.Lock()
+	defer fake.listPolicyAssignmentsMutex.Unlock()
+	fake.ListPolicyAssignmentsStub = nil
+	fake.listPolicyAssignmentsReturns = struct {
+		result1 *v1alpha1.ListPolicyAssignmentsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListPolicyAssignmentsReturnsOnCall(i int, result1 *v1alpha1.ListPolicyAssignmentsResponse, result2 error) {
+	fake.listPolicyAssignmentsMutex.Lock()
+	defer fake.listPolicyAssignmentsMutex.Unlock()
+	fake.ListPolicyAssignmentsStub = nil
+	if fake.listPolicyAssignmentsReturnsOnCall == nil {
+		fake.listPolicyAssignmentsReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.ListPolicyAssignmentsResponse
+			result2 error
+		})
+	}
+	fake.listPolicyAssignmentsReturnsOnCall[i] = struct {
+		result1 *v1alpha1.ListPolicyAssignmentsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListPolicyGroups(arg1 context.Context, arg2 *v1alpha1.ListPolicyGroupsRequest, arg3 ...grpc.CallOption) (*v1alpha1.ListPolicyGroupsResponse, error) {
+	fake.listPolicyGroupsMutex.Lock()
+	ret, specificReturn := fake.listPolicyGroupsReturnsOnCall[len(fake.listPolicyGroupsArgsForCall)]
+	fake.listPolicyGroupsArgsForCall = append(fake.listPolicyGroupsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListPolicyGroupsRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.ListPolicyGroupsStub
+	fakeReturns := fake.listPolicyGroupsReturns
+	fake.recordInvocation("ListPolicyGroups", []interface{}{arg1, arg2, arg3})
+	fake.listPolicyGroupsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) ListPolicyGroupsCallCount() int {
+	fake.listPolicyGroupsMutex.RLock()
+	defer fake.listPolicyGroupsMutex.RUnlock()
+	return len(fake.listPolicyGroupsArgsForCall)
+}
+
+func (fake *FakeRodeClient) ListPolicyGroupsCalls(stub func(context.Context, *v1alpha1.ListPolicyGroupsRequest, ...grpc.CallOption) (*v1alpha1.ListPolicyGroupsResponse, error)) {
+	fake.listPolicyGroupsMutex.Lock()
+	defer fake.listPolicyGroupsMutex.Unlock()
+	fake.ListPolicyGroupsStub = stub
+}
+
+func (fake *FakeRodeClient) ListPolicyGroupsArgsForCall(i int) (context.Context, *v1alpha1.ListPolicyGroupsRequest, []grpc.CallOption) {
+	fake.listPolicyGroupsMutex.RLock()
+	defer fake.listPolicyGroupsMutex.RUnlock()
+	argsForCall := fake.listPolicyGroupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) ListPolicyGroupsReturns(result1 *v1alpha1.ListPolicyGroupsResponse, result2 error) {
+	fake.listPolicyGroupsMutex.Lock()
+	defer fake.listPolicyGroupsMutex.Unlock()
+	fake.ListPolicyGroupsStub = nil
+	fake.listPolicyGroupsReturns = struct {
+		result1 *v1alpha1.ListPolicyGroupsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListPolicyGroupsReturnsOnCall(i int, result1 *v1alpha1.ListPolicyGroupsResponse, result2 error) {
+	fake.listPolicyGroupsMutex.Lock()
+	defer fake.listPolicyGroupsMutex.Unlock()
+	fake.ListPolicyGroupsStub = nil
+	if fake.listPolicyGroupsReturnsOnCall == nil {
+		fake.listPolicyGroupsReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.ListPolicyGroupsResponse
+			result2 error
+		})
+	}
+	fake.listPolicyGroupsReturnsOnCall[i] = struct {
+		result1 *v1alpha1.ListPolicyGroupsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListPolicyVersions(arg1 context.Context, arg2 *v1alpha1.ListPolicyVersionsRequest, arg3 ...grpc.CallOption) (*v1alpha1.ListPolicyVersionsResponse, error) {
+	fake.listPolicyVersionsMutex.Lock()
+	ret, specificReturn := fake.listPolicyVersionsReturnsOnCall[len(fake.listPolicyVersionsArgsForCall)]
+	fake.listPolicyVersionsArgsForCall = append(fake.listPolicyVersionsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListPolicyVersionsRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.ListPolicyVersionsStub
+	fakeReturns := fake.listPolicyVersionsReturns
+	fake.recordInvocation("ListPolicyVersions", []interface{}{arg1, arg2, arg3})
+	fake.listPolicyVersionsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) ListPolicyVersionsCallCount() int {
+	fake.listPolicyVersionsMutex.RLock()
+	defer fake.listPolicyVersionsMutex.RUnlock()
+	return len(fake.listPolicyVersionsArgsForCall)
+}
+
+func (fake *FakeRodeClient) ListPolicyVersionsCalls(stub func(context.Context, *v1alpha1.ListPolicyVersionsRequest, ...grpc.CallOption) (*v1alpha1.ListPolicyVersionsResponse, error)) {
+	fake.listPolicyVersionsMutex.Lock()
+	defer fake.listPolicyVersionsMutex.Unlock()
+	fake.ListPolicyVersionsStub = stub
+}
+
+func (fake *FakeRodeClient) ListPolicyVersionsArgsForCall(i int) (context.Context, *v1alpha1.ListPolicyVersionsRequest, []grpc.CallOption) {
+	fake.listPolicyVersionsMutex.RLock()
+	defer fake.listPolicyVersionsMutex.RUnlock()
+	argsForCall := fake.listPolicyVersionsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) ListPolicyVersionsReturns(result1 *v1alpha1.ListPolicyVersionsResponse, result2 error) {
+	fake.listPolicyVersionsMutex.Lock()
+	defer fake.listPolicyVersionsMutex.Unlock()
+	fake.ListPolicyVersionsStub = nil
+	fake.listPolicyVersionsReturns = struct {
+		result1 *v1alpha1.ListPolicyVersionsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListPolicyVersionsReturnsOnCall(i int, result1 *v1alpha1.ListPolicyVersionsResponse, result2 error) {
+	fake.listPolicyVersionsMutex.Lock()
+	defer fake.listPolicyVersionsMutex.Unlock()
+	fake.ListPolicyVersionsStub = nil
+	if fake.listPolicyVersionsReturnsOnCall == nil {
+		fake.listPolicyVersionsReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.ListPolicyVersionsResponse
+			result2 error
+		})
+	}
+	fake.listPolicyVersionsReturnsOnCall[i] = struct {
+		result1 *v1alpha1.ListPolicyVersionsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListResourceEvaluations(arg1 context.Context, arg2 *v1alpha1.ListResourceEvaluationsRequest, arg3 ...grpc.CallOption) (*v1alpha1.ListResourceEvaluationsResponse, error) {
+	fake.listResourceEvaluationsMutex.Lock()
+	ret, specificReturn := fake.listResourceEvaluationsReturnsOnCall[len(fake.listResourceEvaluationsArgsForCall)]
+	fake.listResourceEvaluationsArgsForCall = append(fake.listResourceEvaluationsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListResourceEvaluationsRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.ListResourceEvaluationsStub
+	fakeReturns := fake.listResourceEvaluationsReturns
+	fake.recordInvocation("ListResourceEvaluations", []interface{}{arg1, arg2, arg3})
+	fake.listResourceEvaluationsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) ListResourceEvaluationsCallCount() int {
+	fake.listResourceEvaluationsMutex.RLock()
+	defer fake.listResourceEvaluationsMutex.RUnlock()
+	return len(fake.listResourceEvaluationsArgsForCall)
+}
+
+func (fake *FakeRodeClient) ListResourceEvaluationsCalls(stub func(context.Context, *v1alpha1.ListResourceEvaluationsRequest, ...grpc.CallOption) (*v1alpha1.ListResourceEvaluationsResponse, error)) {
+	fake.listResourceEvaluationsMutex.Lock()
+	defer fake.listResourceEvaluationsMutex.Unlock()
+	fake.ListResourceEvaluationsStub = stub
+}
+
+func (fake *FakeRodeClient) ListResourceEvaluationsArgsForCall(i int) (context.Context, *v1alpha1.ListResourceEvaluationsRequest, []grpc.CallOption) {
+	fake.listResourceEvaluationsMutex.RLock()
+	defer fake.listResourceEvaluationsMutex.RUnlock()
+	argsForCall := fake.listResourceEvaluationsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) ListResourceEvaluationsReturns(result1 *v1alpha1.ListResourceEvaluationsResponse, result2 error) {
+	fake.listResourceEvaluationsMutex.Lock()
+	defer fake.listResourceEvaluationsMutex.Unlock()
+	fake.ListResourceEvaluationsStub = nil
+	fake.listResourceEvaluationsReturns = struct {
+		result1 *v1alpha1.ListResourceEvaluationsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListResourceEvaluationsReturnsOnCall(i int, result1 *v1alpha1.ListResourceEvaluationsResponse, result2 error) {
+	fake.listResourceEvaluationsMutex.Lock()
+	defer fake.listResourceEvaluationsMutex.Unlock()
+	fake.ListResourceEvaluationsStub = nil
+	if fake.listResourceEvaluationsReturnsOnCall == nil {
+		fake.listResourceEvaluationsReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.ListResourceEvaluationsResponse
+			result2 error
+		})
+	}
+	fake.listResourceEvaluationsReturnsOnCall[i] = struct {
+		result1 *v1alpha1.ListResourceEvaluationsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListResourceVersions(arg1 context.Context, arg2 *v1alpha1.ListResourceVersionsRequest, arg3 ...grpc.CallOption) (*v1alpha1.ListResourceVersionsResponse, error) {
+	fake.listResourceVersionsMutex.Lock()
+	ret, specificReturn := fake.listResourceVersionsReturnsOnCall[len(fake.listResourceVersionsArgsForCall)]
+	fake.listResourceVersionsArgsForCall = append(fake.listResourceVersionsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.ListResourceVersionsRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.ListResourceVersionsStub
+	fakeReturns := fake.listResourceVersionsReturns
+	fake.recordInvocation("ListResourceVersions", []interface{}{arg1, arg2, arg3})
+	fake.listResourceVersionsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) ListResourceVersionsCallCount() int {
+	fake.listResourceVersionsMutex.RLock()
+	defer fake.listResourceVersionsMutex.RUnlock()
+	return len(fake.listResourceVersionsArgsForCall)
+}
+
+func (fake *FakeRodeClient) ListResourceVersionsCalls(stub func(context.Context, *v1alpha1.ListResourceVersionsRequest, ...grpc.CallOption) (*v1alpha1.ListResourceVersionsResponse, error)) {
+	fake.listResourceVersionsMutex.Lock()
+	defer fake.listResourceVersionsMutex.Unlock()
+	fake.ListResourceVersionsStub = stub
+}
+
+func (fake *FakeRodeClient) ListResourceVersionsArgsForCall(i int) (context.Context, *v1alpha1.ListResourceVersionsRequest, []grpc.CallOption) {
+	fake.listResourceVersionsMutex.RLock()
+	defer fake.listResourceVersionsMutex.RUnlock()
+	argsForCall := fake.listResourceVersionsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) ListResourceVersionsReturns(result1 *v1alpha1.ListResourceVersionsResponse, result2 error) {
+	fake.listResourceVersionsMutex.Lock()
+	defer fake.listResourceVersionsMutex.Unlock()
+	fake.ListResourceVersionsStub = nil
+	fake.listResourceVersionsReturns = struct {
+		result1 *v1alpha1.ListResourceVersionsResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) ListResourceVersionsReturnsOnCall(i int, result1 *v1alpha1.ListResourceVersionsResponse, result2 error) {
+	fake.listResourceVersionsMutex.Lock()
+	defer fake.listResourceVersionsMutex.Unlock()
+	fake.ListResourceVersionsStub = nil
+	if fake.listResourceVersionsReturnsOnCall == nil {
+		fake.listResourceVersionsReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.ListResourceVersionsResponse
+			result2 error
+		})
+	}
+	fake.listResourceVersionsReturnsOnCall[i] = struct {
+		result1 *v1alpha1.ListResourceVersionsResponse
 		result2 error
 	}{result1, result2}
 }
@@ -1246,6 +2167,138 @@ func (fake *FakeRodeClient) UpdatePolicyReturnsOnCall(i int, result1 *v1alpha1.P
 	}{result1, result2}
 }
 
+func (fake *FakeRodeClient) UpdatePolicyAssignment(arg1 context.Context, arg2 *v1alpha1.PolicyAssignment, arg3 ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error) {
+	fake.updatePolicyAssignmentMutex.Lock()
+	ret, specificReturn := fake.updatePolicyAssignmentReturnsOnCall[len(fake.updatePolicyAssignmentArgsForCall)]
+	fake.updatePolicyAssignmentArgsForCall = append(fake.updatePolicyAssignmentArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyAssignment
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.UpdatePolicyAssignmentStub
+	fakeReturns := fake.updatePolicyAssignmentReturns
+	fake.recordInvocation("UpdatePolicyAssignment", []interface{}{arg1, arg2, arg3})
+	fake.updatePolicyAssignmentMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) UpdatePolicyAssignmentCallCount() int {
+	fake.updatePolicyAssignmentMutex.RLock()
+	defer fake.updatePolicyAssignmentMutex.RUnlock()
+	return len(fake.updatePolicyAssignmentArgsForCall)
+}
+
+func (fake *FakeRodeClient) UpdatePolicyAssignmentCalls(stub func(context.Context, *v1alpha1.PolicyAssignment, ...grpc.CallOption) (*v1alpha1.PolicyAssignment, error)) {
+	fake.updatePolicyAssignmentMutex.Lock()
+	defer fake.updatePolicyAssignmentMutex.Unlock()
+	fake.UpdatePolicyAssignmentStub = stub
+}
+
+func (fake *FakeRodeClient) UpdatePolicyAssignmentArgsForCall(i int) (context.Context, *v1alpha1.PolicyAssignment, []grpc.CallOption) {
+	fake.updatePolicyAssignmentMutex.RLock()
+	defer fake.updatePolicyAssignmentMutex.RUnlock()
+	argsForCall := fake.updatePolicyAssignmentArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) UpdatePolicyAssignmentReturns(result1 *v1alpha1.PolicyAssignment, result2 error) {
+	fake.updatePolicyAssignmentMutex.Lock()
+	defer fake.updatePolicyAssignmentMutex.Unlock()
+	fake.UpdatePolicyAssignmentStub = nil
+	fake.updatePolicyAssignmentReturns = struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) UpdatePolicyAssignmentReturnsOnCall(i int, result1 *v1alpha1.PolicyAssignment, result2 error) {
+	fake.updatePolicyAssignmentMutex.Lock()
+	defer fake.updatePolicyAssignmentMutex.Unlock()
+	fake.UpdatePolicyAssignmentStub = nil
+	if fake.updatePolicyAssignmentReturnsOnCall == nil {
+		fake.updatePolicyAssignmentReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.PolicyAssignment
+			result2 error
+		})
+	}
+	fake.updatePolicyAssignmentReturnsOnCall[i] = struct {
+		result1 *v1alpha1.PolicyAssignment
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) UpdatePolicyGroup(arg1 context.Context, arg2 *v1alpha1.PolicyGroup, arg3 ...grpc.CallOption) (*v1alpha1.PolicyGroup, error) {
+	fake.updatePolicyGroupMutex.Lock()
+	ret, specificReturn := fake.updatePolicyGroupReturnsOnCall[len(fake.updatePolicyGroupArgsForCall)]
+	fake.updatePolicyGroupArgsForCall = append(fake.updatePolicyGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1alpha1.PolicyGroup
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.UpdatePolicyGroupStub
+	fakeReturns := fake.updatePolicyGroupReturns
+	fake.recordInvocation("UpdatePolicyGroup", []interface{}{arg1, arg2, arg3})
+	fake.updatePolicyGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeRodeClient) UpdatePolicyGroupCallCount() int {
+	fake.updatePolicyGroupMutex.RLock()
+	defer fake.updatePolicyGroupMutex.RUnlock()
+	return len(fake.updatePolicyGroupArgsForCall)
+}
+
+func (fake *FakeRodeClient) UpdatePolicyGroupCalls(stub func(context.Context, *v1alpha1.PolicyGroup, ...grpc.CallOption) (*v1alpha1.PolicyGroup, error)) {
+	fake.updatePolicyGroupMutex.Lock()
+	defer fake.updatePolicyGroupMutex.Unlock()
+	fake.UpdatePolicyGroupStub = stub
+}
+
+func (fake *FakeRodeClient) UpdatePolicyGroupArgsForCall(i int) (context.Context, *v1alpha1.PolicyGroup, []grpc.CallOption) {
+	fake.updatePolicyGroupMutex.RLock()
+	defer fake.updatePolicyGroupMutex.RUnlock()
+	argsForCall := fake.updatePolicyGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeRodeClient) UpdatePolicyGroupReturns(result1 *v1alpha1.PolicyGroup, result2 error) {
+	fake.updatePolicyGroupMutex.Lock()
+	defer fake.updatePolicyGroupMutex.Unlock()
+	fake.UpdatePolicyGroupStub = nil
+	fake.updatePolicyGroupReturns = struct {
+		result1 *v1alpha1.PolicyGroup
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeRodeClient) UpdatePolicyGroupReturnsOnCall(i int, result1 *v1alpha1.PolicyGroup, result2 error) {
+	fake.updatePolicyGroupMutex.Lock()
+	defer fake.updatePolicyGroupMutex.Unlock()
+	fake.UpdatePolicyGroupStub = nil
+	if fake.updatePolicyGroupReturnsOnCall == nil {
+		fake.updatePolicyGroupReturnsOnCall = make(map[int]struct {
+			result1 *v1alpha1.PolicyGroup
+			result2 error
+		})
+	}
+	fake.updatePolicyGroupReturnsOnCall[i] = struct {
+		result1 *v1alpha1.PolicyGroup
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeRodeClient) ValidatePolicy(arg1 context.Context, arg2 *v1alpha1.ValidatePolicyRequest, arg3 ...grpc.CallOption) (*v1alpha1.ValidatePolicyResponse, error) {
 	fake.validatePolicyMutex.Lock()
 	ret, specificReturn := fake.validatePolicyReturnsOnCall[len(fake.validatePolicyArgsForCall)]
@@ -1321,20 +2374,42 @@ func (fake *FakeRodeClient) Invocations() map[string][][]interface{} {
 	defer fake.createNoteMutex.RUnlock()
 	fake.createPolicyMutex.RLock()
 	defer fake.createPolicyMutex.RUnlock()
+	fake.createPolicyAssignmentMutex.RLock()
+	defer fake.createPolicyAssignmentMutex.RUnlock()
+	fake.createPolicyGroupMutex.RLock()
+	defer fake.createPolicyGroupMutex.RUnlock()
 	fake.deletePolicyMutex.RLock()
 	defer fake.deletePolicyMutex.RUnlock()
+	fake.deletePolicyAssignmentMutex.RLock()
+	defer fake.deletePolicyAssignmentMutex.RUnlock()
+	fake.deletePolicyGroupMutex.RLock()
+	defer fake.deletePolicyGroupMutex.RUnlock()
 	fake.evaluatePolicyMutex.RLock()
 	defer fake.evaluatePolicyMutex.RUnlock()
+	fake.evaluateResourceMutex.RLock()
+	defer fake.evaluateResourceMutex.RUnlock()
 	fake.getPolicyMutex.RLock()
 	defer fake.getPolicyMutex.RUnlock()
-	fake.listGenericResourceVersionsMutex.RLock()
-	defer fake.listGenericResourceVersionsMutex.RUnlock()
-	fake.listGenericResourcesMutex.RLock()
-	defer fake.listGenericResourcesMutex.RUnlock()
+	fake.getPolicyAssignmentMutex.RLock()
+	defer fake.getPolicyAssignmentMutex.RUnlock()
+	fake.getPolicyGroupMutex.RLock()
+	defer fake.getPolicyGroupMutex.RUnlock()
+	fake.getResourceEvaluationMutex.RLock()
+	defer fake.getResourceEvaluationMutex.RUnlock()
 	fake.listOccurrencesMutex.RLock()
 	defer fake.listOccurrencesMutex.RUnlock()
 	fake.listPoliciesMutex.RLock()
 	defer fake.listPoliciesMutex.RUnlock()
+	fake.listPolicyAssignmentsMutex.RLock()
+	defer fake.listPolicyAssignmentsMutex.RUnlock()
+	fake.listPolicyGroupsMutex.RLock()
+	defer fake.listPolicyGroupsMutex.RUnlock()
+	fake.listPolicyVersionsMutex.RLock()
+	defer fake.listPolicyVersionsMutex.RUnlock()
+	fake.listResourceEvaluationsMutex.RLock()
+	defer fake.listResourceEvaluationsMutex.RUnlock()
+	fake.listResourceVersionsMutex.RLock()
+	defer fake.listResourceVersionsMutex.RUnlock()
 	fake.listResourcesMutex.RLock()
 	defer fake.listResourcesMutex.RUnlock()
 	fake.listVersionedResourceOccurrencesMutex.RLock()
@@ -1345,6 +2420,10 @@ func (fake *FakeRodeClient) Invocations() map[string][][]interface{} {
 	defer fake.updateOccurrenceMutex.RUnlock()
 	fake.updatePolicyMutex.RLock()
 	defer fake.updatePolicyMutex.RUnlock()
+	fake.updatePolicyAssignmentMutex.RLock()
+	defer fake.updatePolicyAssignmentMutex.RUnlock()
+	fake.updatePolicyGroupMutex.RLock()
+	defer fake.updatePolicyGroupMutex.RUnlock()
 	fake.validatePolicyMutex.RLock()
 	defer fake.validatePolicyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
