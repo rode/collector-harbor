@@ -16,18 +16,15 @@ package config
 
 import (
 	"flag"
+	"github.com/peterbourgon/ff/v3"
+	"github.com/rode/rode/common"
 )
 
 type Config struct {
 	Port         int
 	Debug        bool
-	RodeConfig   *RodeConfig
+	ClientConfig *common.ClientConfig
 	HarborConfig *HarborConfig
-}
-
-type RodeConfig struct {
-	Host     string
-	Insecure bool
 }
 
 type HarborConfig struct {
@@ -41,22 +38,19 @@ func Build(name string, args []string) (*Config, error) {
 	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 
 	c := &Config{
-		RodeConfig:   &RodeConfig{},
+		ClientConfig: common.SetupRodeClientFlags(flags),
 		HarborConfig: &HarborConfig{},
 	}
 
 	flags.IntVar(&c.Port, "port", 8080, "the port that the harbor collector should listen on")
 	flags.BoolVar(&c.Debug, "debug", false, "when set, debug mode will be enabled")
 
-	flags.StringVar(&c.RodeConfig.Host, "rode-host", "rode:50051", "the host to use to connect to rode")
-	flags.BoolVar(&c.RodeConfig.Insecure, "rode-insecure", false, "when set, the connection to rode will not use TLS")
-
 	flags.StringVar(&c.HarborConfig.Host, "harbor-host", "http://harbor-harbor-core", "the host to use when contacting the Harbor API")
 	flags.StringVar(&c.HarborConfig.Username, "harbor-username", "", "The username to use to authenticate to Harbor")
 	flags.StringVar(&c.HarborConfig.Password, "harbor-password", "", "The password to use to authenticate to Harbor")
 	flags.BoolVar(&c.HarborConfig.Insecure, "harbor-insecure", false, "when set, the collector will not verify the TLS certificate for harbor")
 
-	err := flags.Parse(args)
+	err := ff.Parse(flags, args)
 	if err != nil {
 		return nil, err
 	}

@@ -17,4 +17,4 @@ test: fmtcheck vet
 
 mocks:
 	go install github.com/maxbrunsfeld/counterfeiter/v6@v6.4.1
-	COUNTERFEITER_NO_GENERATE_WARNING="true" go generate mocks/generate.go
+	COUNTERFEITER_NO_GENERATE_WARNING="true" go generate ./...

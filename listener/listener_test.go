@@ -22,8 +22,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/rode/collector-harbor/harbor"
-	"github.com/rode/collector-harbor/mocks"
+	"github.com/rode/collector-harbor/harbor/harborfakes"
 	pb "github.com/rode/rode/proto/v1alpha1"
+	"github.com/rode/rode/proto/v1alpha1fakes"
 	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/common_go_proto"
 	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/discovery_go_proto"
 	"github.com/rode/rode/protodeps/grafeas/proto/v1beta1/grafeas_go_proto"
@@ -38,14 +39,14 @@ import (
 
 var _ = Describe("listener", func() {
 	var (
-		harborClient *mocks.FakeClient
-		rodeClient   *mocks.FakeRodeClient
+		harborClient *harborfakes.FakeClient
+		rodeClient   *v1alpha1fakes.FakeRodeClient
 		listener     Listener
 	)
 
 	BeforeEach(func() {
-		harborClient = &mocks.FakeClient{}
-		rodeClient = &mocks.FakeRodeClient{}
+		harborClient = &harborfakes.FakeClient{}
+		rodeClient = &v1alpha1fakes.FakeRodeClient{}
 	})
 
 	JustBeforeEach(func() {

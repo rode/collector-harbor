@@ -16,6 +16,7 @@ package config
 
 import (
 	. "github.com/onsi/gomega"
+	"github.com/rode/rode/common"
 	"testing"
 )
 
@@ -34,8 +35,12 @@ func TestConfig(t *testing.T) {
 			expected: &Config{
 				Port:  8080,
 				Debug: false,
-				RodeConfig: &RodeConfig{
-					Host: "rode:50051",
+				ClientConfig: &common.ClientConfig{
+					Rode: &common.RodeClientConfig{
+						Host: "rode:50051",
+					},
+					OIDCAuth:  &common.OIDCAuthConfig{},
+					BasicAuth: &common.BasicAuthConfig{},
 				},
 				HarborConfig: &HarborConfig{
 					Host: "http://harbor-harbor-core",
@@ -58,8 +63,12 @@ func TestConfig(t *testing.T) {
 			expected: &Config{
 				Port:  8080,
 				Debug: false,
-				RodeConfig: &RodeConfig{
-					Host: "bar",
+				ClientConfig: &common.ClientConfig{
+					Rode: &common.RodeClientConfig{
+						Host: "bar",
+					},
+					OIDCAuth:  &common.OIDCAuthConfig{},
+					BasicAuth: &common.BasicAuthConfig{},
 				},
 				HarborConfig: &HarborConfig{
 					Host: "http://harbor-harbor-core",
@@ -72,8 +81,12 @@ func TestConfig(t *testing.T) {
 			expected: &Config{
 				Port:  8080,
 				Debug: false,
-				RodeConfig: &RodeConfig{
-					Host: "rode:50051",
+				ClientConfig: &common.ClientConfig{
+					Rode: &common.RodeClientConfig{
+						Host: "rode:50051",
+					},
+					OIDCAuth:  &common.OIDCAuthConfig{},
+					BasicAuth: &common.BasicAuthConfig{},
 				},
 				HarborConfig: &HarborConfig{
 					Host:     "foo",
