@@ -81,7 +81,7 @@ var _ = Describe("listener", func() {
 
 		BeforeEach(func() {
 			expectedPayload = nil
-			expectedUrl = fake.URL()
+			expectedUrl = fake.DomainName()
 			recorder = httptest.NewRecorder()
 
 			expectedArtifactUrl = fake.URL()
@@ -218,10 +218,12 @@ var _ = Describe("listener", func() {
 				Expect(scanStartOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
 				Expect(scanStartOccurrence.NoteName).To(Equal(expectedNoteName))
 				Expect(scanStartOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
+				Expect(scanStartOccurrence.Resource.Uri).To(MatchRegexp("%s@sha256:.+", expectedUrl))
 
 				Expect(scanEndOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
 				Expect(scanEndOccurrence.NoteName).To(Equal(expectedNoteName))
 				Expect(scanEndOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_FAILED))
+				Expect(scanEndOccurrence.Resource.Uri).To(MatchRegexp("%s@sha256:.+", expectedUrl))
 			})
 
 			It("should respond with a 200", func() {
@@ -297,10 +299,12 @@ var _ = Describe("listener", func() {
 				Expect(scanStartOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
 				Expect(scanStartOccurrence.NoteName).To(Equal(expectedNoteName))
 				Expect(scanStartOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
+				Expect(scanStartOccurrence.Resource.Uri).To(MatchRegexp("%s@sha256:.+", expectedUrl))
 
 				Expect(scanEndOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
 				Expect(scanEndOccurrence.NoteName).To(Equal(expectedNoteName))
 				Expect(scanEndOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
+				Expect(scanEndOccurrence.Resource.Uri).To(MatchRegexp("%s@sha256:.+", expectedUrl))
 			})
 
 			It("should respond with a 200", func() {
@@ -338,10 +342,12 @@ var _ = Describe("listener", func() {
 					Expect(scanStartOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
 					Expect(scanStartOccurrence.NoteName).To(Equal(expectedNoteName))
 					Expect(scanStartOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_SCANNING))
+					Expect(scanStartOccurrence.Resource.Uri).To(MatchRegexp("%s@sha256:.+", expectedUrl))
 
 					Expect(scanEndOccurrence.Kind).To(Equal(common_go_proto.NoteKind_DISCOVERY))
 					Expect(scanEndOccurrence.NoteName).To(Equal(expectedNoteName))
 					Expect(scanEndOccurrence.Details.(*grafeas_go_proto.Occurrence_Discovered).Discovered.Discovered.AnalysisStatus).To(Equal(discovery_go_proto.Discovered_FINISHED_SUCCESS))
+					Expect(scanEndOccurrence.Resource.Uri).To(MatchRegexp("%s@sha256:.+", expectedUrl))
 
 					for i := 0; i < len(expectedReport.Vulnerabilities); i++ {
 						occurrence := batchCreateOccurrencesRequest.Occurrences[i+2]
@@ -473,7 +479,6 @@ func generateRandomTime() int64 {
 
 func generateRandomResource(expectedUrl, expectedReportId string) *harbor.Resource {
 	randomDigest := sha256.Sum256([]byte(fake.LetterN(10)))
-	randomTag := fake.LetterN(7)
 
 	return &harbor.Resource{
 		ScanOverview: &harbor.ScanOverview{
@@ -492,8 +497,7 @@ func generateRandomResource(expectedUrl, expectedReportId string) *harbor.Resour
 			},
 		},
 		Digest:      fmt.Sprintf("sha256:%x", randomDigest),
-		Tag:         randomTag,
-		ResourceUrl: fmt.Sprintf("%s:%s", expectedUrl, randomTag),
+		ResourceUrl: fmt.Sprintf("%s@sha256:%s", expectedUrl, randomDigest),
 	}
 }
 

@@ -40,7 +40,6 @@ type Repository struct {
 // Resource is...
 type Resource struct {
 	Digest       string        `json:"digest"`
-	Tag          string        `json:"tag"`
 	ResourceUrl  string        `json:"resource_url"`
 	ScanOverview *ScanOverview `json:"scan_overview"`
 }
