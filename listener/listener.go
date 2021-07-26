@@ -154,7 +154,7 @@ func createDiscoveryOccurrences(event *harbor.Event, resource *harbor.Resource, 
 	return []*grafeas_go_proto.Occurrence{
 		{
 			Resource: &grafeas_go_proto.Resource{
-				Uri: resourceUri(resource),
+				Uri: resource.ResourceUrl,
 			},
 			NoteName:   noteName,
 			Kind:       common_go_proto.NoteKind_DISCOVERY,
@@ -169,7 +169,7 @@ func createDiscoveryOccurrences(event *harbor.Event, resource *harbor.Resource, 
 		},
 		{
 			Resource: &grafeas_go_proto.Resource{
-				Uri: resourceUri(resource),
+				Uri: resource.ResourceUrl,
 			},
 			NoteName:   noteName,
 			Kind:       common_go_proto.NoteKind_DISCOVERY,
@@ -195,7 +195,7 @@ func (l *listener) createVulnerabilityOccurrences(event *harbor.Event, resource 
 	for _, vulnerability := range report.Vulnerabilities {
 		occurrence := &grafeas_go_proto.Occurrence{
 			Resource: &grafeas_go_proto.Resource{
-				Uri: resourceUri(resource),
+				Uri: resource.ResourceUrl,
 			},
 			NoteName:   noteName,
 			Kind:       common_go_proto.NoteKind_VULNERABILITY,
@@ -246,12 +246,6 @@ func (l *listener) createNoteForReport(ctx context.Context, event *harbor.Event,
 	}
 
 	return note.Name, nil
-}
-
-func resourceUri(resource *harbor.Resource) string {
-	base := strings.Split(resource.ResourceUrl, ":")[0]
-
-	return fmt.Sprintf("%s@%s", base, resource.Digest)
 }
 
 func eventTimestamp(event *harbor.Event) *timestamppb.Timestamp {
